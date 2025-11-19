@@ -1,0 +1,7 @@
+{
+  "name": "DTU LibBot",
+  "description": "Trợ lý ảo Thư viện Đại học Duy Tân - Hỗ trợ tra cứu sách và thông tin thư viện.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
