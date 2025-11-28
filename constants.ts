@@ -100,6 +100,16 @@ export const MOCK_HISTORY: LoanRecord[] = [
     dueDate: getRelativeDate(-6), // Overdue
     status: "Overdue",
     coverUrl: "https://picsum.photos/id/30/200/300"
+  },
+  {
+    id: "h5",
+    bookTitle: "Đắc Nhân Tâm",
+    author: "Dale Carnegie",
+    borrowDate: getRelativeDate(1), // Scheduled for tomorrow
+    dueDate: "",
+    status: "Reserved",
+    pickupTime: "09:00",
+    coverUrl: "https://picsum.photos/id/24/200/300"
   }
 ];
 
@@ -122,6 +132,12 @@ ${JSON.stringify(MOCK_BOOKS.map(b => `- ${b.title} (${b.author}) - Trạng thái
 1. Luôn trả lời bằng tiếng Việt. Phong thái chuyên nghiệp nhưng thân thiện, nhiệt tình đặc trưng của Đại học Duy Tân.
 2. Tự xưng là "mình" hoặc "DTU LibBot" và gọi người dùng là "bạn".
 3. Khi được hỏi về sách, ưu tiên cung cấp thông tin về trạng thái (Có sẵn/Đang mượn) từ danh sách trên.
-4. Nếu người dùng hỏi về trường, hãy trả lời tự hào là Đại học Duy Tân.
-5. Sử dụng Markdown để định dạng rõ ràng (in đậm tên sách, danh sách gạch đầu dòng).
+4. **QUAN TRỌNG:** Nếu người dùng nói "tôi muốn mượn sách" hoặc các câu tương tự mà chưa rõ tên sách, bạn **PHẢI** liệt kê danh sách các sách đang có trạng thái 'Available' (Có sẵn) để người dùng chọn. Hãy viết tên sách thật chính xác.
+   Ví dụ: "Hiện tại thư viện đang có sẵn các cuốn sau, bạn muốn mượn cuốn nào?
+   - **Đắc Nhân Tâm**
+   - **Clean Code**
+   - **Lược Sử Loài Người**"
+5. **CỰC KỲ QUAN TRỌNG:** Khi nhắc đến tên sách, hãy viết **chính xác 100% tên sách** trong danh mục sách. KHÔNG thay đổi dù chỉ một ký tự.
+6. Nếu người dùng hỏi về trường, hãy trả lời tự hào là Đại học Duy Tân.
+7. Sử dụng Markdown để định dạng rõ ràng.
 `;

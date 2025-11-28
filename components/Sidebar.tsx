@@ -23,9 +23,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
   };
 
   const getMainMenuItems = () => {
-    if (userRole === 'admin') {
+    if (userRole === 'admin' || userRole === 'librarian') {
       return [
-        { id: 'admin-dashboard' as ViewState, label: 'Tổng quan Admin', icon: LayoutDashboard },
+        { id: 'admin-dashboard' as ViewState, label: userRole === 'admin' ? 'Tổng quan Admin' : 'Tổng quan Thư viện', icon: LayoutDashboard },
         { id: 'admin-books' as ViewState, label: 'Quản lý sách', icon: BookOpen },
       ];
     }
@@ -36,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
   };
 
   const getPersonalMenuItems = () => {
-    if (userRole === 'admin') {
+    if (userRole === 'admin' || userRole === 'librarian') {
       return [
         // Admin specific personal items if any, currently simple
       ];
@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
           <div>
             <h1 className="font-bold text-brand-700 dark:text-brand-500 text-lg tracking-tight leading-none">DTU Library</h1>
             <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">
-              {userRole === 'admin' ? 'Admin Portal' : 'Student Portal'}
+              {userRole === 'admin' ? 'Admin Portal' : userRole === 'librarian' ? 'Librarian Portal' : 'Student Portal'}
             </span>
           </div>
         </div>
@@ -147,6 +147,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
             <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border ${
               userRole === 'admin' 
                 ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' 
+                : userRole === 'librarian'
+                ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
                 : 'bg-brand-100 text-brand-700 border-brand-200 dark:bg-brand-900/30 dark:text-brand-400'
             }`}>
               {userName.charAt(0)}

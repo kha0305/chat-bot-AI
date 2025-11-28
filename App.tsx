@@ -8,10 +8,11 @@ import AdminDashboard from './components/AdminDashboard';
 import Login from './components/Login';
 import LoanHistory from './components/LoanHistory';
 import SettingsModal from './components/SettingsModal';
-import { ChatMessage, Sender, ViewState, AppSettings, User, UserRole, Book } from './types';
+import BorrowModal from './components/BorrowModal';
+import { ChatMessage, Sender, ViewState, AppSettings, User, UserRole, Book, LoanRecord } from './types';
 import { createChatSession, sendMessageStream } from './services/geminiService';
 import { Chat } from '@google/genai';
-import { MOCK_BOOKS } from './constants';
+import { MOCK_BOOKS, MOCK_HISTORY } from './constants';
 
 const App: React.FC = () => {
   // Auth State
@@ -19,6 +20,11 @@ const App: React.FC = () => {
   
   // Global Data State
   const [books, setBooks] = useState<Book[]>(MOCK_BOOKS);
+  const [loans, setLoans] = useState<LoanRecord[]>(MOCK_HISTORY);
+
+  // Modal State (Lifted from Dashboard)
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
 
   // UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -90,13 +96,53 @@ const App: React.FC = () => {
       name,
       role
     });
-    setCurrentView(role === 'admin' ? 'admin-dashboard' : 'dashboard');
+    // Redirect Admin and Librarian to Admin Dashboard initially
+    setCurrentView(role === 'student' ? 'dashboard' : 'admin-dashboard');
   };
 
   const handleLogout = () => {
     setUser(null);
     setMessages([]);
     chatSessionRef.current = null;
+  };
+
+  // Handler to open borrow modal (used in Dashboard AND Chat)
+  const handleOpenBorrow = (book: Book) => {
+    setSelectedBook(book);
+    setIsBorrowModalOpen(true);
+  };
+
+  // Handler for successful borrow from Modal
+  const handleBorrowSuccess = (bookTitle: string, date: string, time: string) => {
+    // 1. Add to Loan History (Reserved Status)
+    if (selectedBook) {
+        const newLoan: LoanRecord = {
+            id: Date.now().toString(),
+            bookTitle: selectedBook.title,
+            author: selectedBook.author,
+            borrowDate: date,
+            dueDate: "", // Not determined until picked up
+            status: 'Reserved',
+            coverUrl: selectedBook.coverUrl,
+            pickupTime: time
+        };
+        setLoans(prev => [newLoan, ...prev]);
+    }
+
+    // 2. Send Success Message to Chat
+    const successMsg: ChatMessage = {
+      id: Date.now().toString(),
+      sender: Sender.BOT,
+      text: `✅ Đăng ký mượn sách **${bookTitle}** thành công!\n\nVui lòng đến thư viện nhận sách vào lúc **${time} ngày ${date}**.\n\nBạn có thể kiểm tra lại trong phần "Lịch sử mượn sách".`,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, successMsg]);
+    
+    // Optional: Scroll to bottom if we are in chat
+    if (currentView === 'chat') {
+        setTimeout(scrollToBottom, 100);
+    }
   };
 
   const handleSend = async (text: string, image?: string) => {
@@ -201,7 +247,7 @@ const App: React.FC = () => {
   const getHeaderTitle = () => {
     switch (currentView) {
       case 'dashboard': return 'Tổng quan';
-      case 'admin-dashboard': return 'Tổng quan Admin';
+      case 'admin-dashboard': return user?.role === 'admin' ? 'Tổng quan Admin' : 'Tổng quan Thư viện';
       case 'admin-books': return 'Quản lý sách';
       case 'chat': return 'DTU LibBot';
       case 'history': return 'Sổ tay thư viện';
@@ -225,12 +271,19 @@ const App: React.FC = () => {
 
   return (
     <div className={`flex h-screen overflow-hidden ${settings.theme === 'dark' ? 'dark bg-gray-900' : 'bg-white'}`}>
-      {/* Settings Modal */}
+      {/* Modals */}
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
         settings={settings}
         onUpdateSettings={setSettings}
+      />
+      
+      <BorrowModal 
+        book={selectedBook} 
+        isOpen={isBorrowModalOpen} 
+        onClose={() => setIsBorrowModalOpen(false)}
+        onBorrowSuccess={handleBorrowSuccess} 
       />
 
       {/* Sidebar */}
@@ -305,19 +358,20 @@ const App: React.FC = () => {
                         onNavigateToChat={handleNavigateToChat} 
                         books={books}
                         setBooks={setBooks}
+                        onOpenBorrow={handleOpenBorrow}
                     />
                 </div>
             )}
 
             {(currentView === 'admin-dashboard' || currentView === 'admin-books') && (
                 <div className="flex-1 overflow-y-auto">
-                    <AdminDashboard books={books} setBooks={setBooks} />
+                    <AdminDashboard books={books} setBooks={setBooks} userRole={user.role} />
                 </div>
             )}
 
             {currentView === 'history' && (
                 <div className="flex-1 overflow-y-auto">
-                    <LoanHistory />
+                    <LoanHistory loans={loans} />
                 </div>
             )}
 
@@ -337,6 +391,8 @@ const App: React.FC = () => {
                                   key={msg.id} 
                                   message={msg} 
                                   fontSize={settings.fontSize}
+                                  books={books}
+                                  onBorrow={handleOpenBorrow}
                                 />
                             ))}
                             

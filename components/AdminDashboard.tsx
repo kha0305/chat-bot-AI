@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { BookOpen, Users, AlertCircle, Plus, Trash2, Search, Edit, MoreVertical, CheckCircle } from 'lucide-react';
-import { Book } from '../types';
+import { Book, UserRole } from '../types';
 
 interface AdminDashboardProps {
   books: Book[];
   setBooks: React.Dispatch<React.SetStateAction<Book[]>>;
+  userRole: UserRole;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ books, setBooks }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ books, setBooks, userRole }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBook, setNewBook] = useState<Partial<Book>>({
@@ -52,7 +53,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ books, setBooks }) => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in pb-20">
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 ${userRole === 'admin' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex justify-between items-start">
                 <div>
@@ -64,17 +65,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ books, setBooks }) => {
                 </div>
             </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
-            <div className="flex justify-between items-start">
-                <div>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Thành viên</p>
-                    <h3 className="text-3xl font-bold text-gray-800 dark:text-white mt-1">3,842</h3>
-                </div>
-                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl">
-                    <Users size={24} />
-                </div>
-            </div>
-        </div>
+        
+        {/* Only Admin sees User Stats */}
+        {userRole === 'admin' && (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex justify-between items-start">
+                  <div>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Thành viên</p>
+                      <h3 className="text-3xl font-bold text-gray-800 dark:text-white mt-1">3,842</h3>
+                  </div>
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-xl">
+                      <Users size={24} />
+                  </div>
+              </div>
+          </div>
+        )}
+
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex justify-between items-start">
                 <div>
@@ -160,12 +166,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ books, setBooks }) => {
                                         <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
                                             <Edit size={16} />
                                         </button>
-                                        <button 
-                                            onClick={() => handleDelete(book.id)}
-                                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        
+                                        {/* Only Admin can delete */}
+                                        {userRole === 'admin' && (
+                                            <button 
+                                                onClick={() => handleDelete(book.id)}
+                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

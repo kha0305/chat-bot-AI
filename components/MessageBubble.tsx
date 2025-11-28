@@ -1,13 +1,15 @@
 import React from 'react';
-import { ChatMessage, Sender, FontSize } from '../types';
-import { User, Bot } from 'lucide-react';
+import { ChatMessage, Sender, FontSize, Book } from '../types';
+import { User, Bot, CalendarCheck, Book as BookIcon, ChevronRight } from 'lucide-react';
 
 interface MessageBubbleProps {
   message: ChatMessage;
   fontSize?: FontSize;
+  books?: Book[];
+  onBorrow?: (book: Book) => void;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medium' }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medium', books, onBorrow }) => {
   const isUser = message.sender === Sender.USER;
 
   // Simple parser to handle bolding
@@ -31,17 +33,37 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medi
     }
   };
 
+  // Extract Mentioned Books
+  // We look for book titles from our 'books' prop that appear in the message text.
+  let mentionedBooks: Book[] = [];
+  if (!isUser && books && onBorrow) {
+    // Sort books by title length descending to match longest titles first to avoid partial matches errors
+    const sortedBooks = [...books].sort((a, b) => b.title.length - a.title.length);
+    // Use a Set to avoid duplicates if book is mentioned multiple times
+    const foundBooks = new Set<string>();
+    
+    sortedBooks.forEach(book => {
+        if (message.text.includes(book.title)) {
+            foundBooks.add(book.id);
+        }
+    });
+
+    // Convert back to Book objects, maintaining the order of availability or relevance if needed
+    // Here we just map ids back to books
+    mentionedBooks = books.filter(b => foundBooks.has(b.id));
+  }
+
   return (
     <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} mb-6 animate-fade-in group`}>
-      <div className={`flex max-w-[90%] sm:max-w-[80%] md:max-w-[70%] lg:max-w-[60%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start gap-3`}>
+      <div className={`flex max-w-[95%] sm:max-w-[85%] md:max-w-[75%] lg:max-w-[65%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start gap-3`}>
         
         {/* Avatar */}
         <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${isUser ? 'bg-brand-600 dark:bg-brand-700' : 'bg-emerald-600 dark:bg-emerald-700'} text-white shadow-sm mt-0.5`}>
           {isUser ? <User size={18} /> : <Bot size={18} />}
         </div>
 
-        {/* Bubble */}
-        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0`}>
+        {/* Bubble content wrapper */}
+        <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} min-w-0 w-full`}>
           <div 
             className={`px-5 py-3.5 shadow-md overflow-hidden transition-all ${getTextSizeClass()} ${
               isUser 
@@ -71,6 +93,49 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medi
               </div>
             )}
           </div>
+
+          {/* Book Action Cards (Horizontal Scroll if multiple) */}
+          {mentionedBooks.length > 0 && onBorrow && (
+            <div className="mt-3 w-full overflow-x-auto pb-2 -mx-1 px-1 custom-scrollbar">
+              <div className="flex gap-3">
+                {mentionedBooks.map(book => (
+                  <div key={book.id} className="min-w-[240px] max-w-[240px] p-3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col gap-2 animate-fade-in hover:shadow-md transition-shadow">
+                    <div className="flex gap-3">
+                      <div className="w-12 h-16 bg-gray-200 rounded overflow-hidden shrink-0">
+                        <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-xs sm:text-sm text-gray-800 dark:text-white line-clamp-2" title={book.title}>{book.title}</h4>
+                        <p className="text-[10px] text-gray-500 line-clamp-1">{book.author}</p>
+                        <span className={`inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded border ${
+                          book.status === 'Available' 
+                            ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-700 dark:text-gray-400'
+                        }`}>
+                          {book.status === 'Available' ? 'Có sẵn' : 'Đã hết'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {book.status === 'Available' ? (
+                      <button 
+                        onClick={() => onBorrow(book)}
+                        className="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 text-xs font-bold uppercase"
+                      >
+                        <CalendarCheck size={14} />
+                        Đặt lịch mượn
+                      </button>
+                    ) : (
+                      <button disabled className="w-full py-2 bg-gray-100 dark:bg-gray-700 text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg text-xs font-bold uppercase cursor-not-allowed">
+                        Tạm hết sách
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <span className={`text-[11px] text-gray-400 dark:text-gray-500 mt-1.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 select-none`}>
             {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>

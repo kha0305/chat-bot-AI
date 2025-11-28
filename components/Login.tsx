@@ -31,11 +31,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     // Simulate API delay
     setTimeout(() => {
+      // Check hardcoded admin account
       if (username === 'admin' && password === 'admin') {
         onLogin('admin', 'Quản Trị Viên');
-      } else if (username === 'student' && password === 'student') {
+      }
+      // Check hardcoded librarian account
+      else if (username === 'librarian' && password === 'librarian') {
+        onLogin('librarian', 'Nhân viên Thư viện');
+      } 
+      // Check hardcoded student account
+      else if (username === 'student' && password === 'student') {
         onLogin('student', 'Nguyễn Văn A');
-      } else {
+      } 
+      // Check for the newly registered account (Mock logic for demo)
+      else if (regUsername && username === regUsername && password === regPassword) {
+        onLogin('student', regName || 'Sinh viên mới');
+      }
+      else {
         setNotification({ type: 'error', message: 'Tên đăng nhập hoặc mật khẩu không đúng' });
         setIsLoading(false);
       }
@@ -67,6 +79,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       // Pre-fill login with new username
       setUsername(regUsername);
       setPassword('');
+      // Note: We deliberately do NOT clear regUsername/regPassword here 
+      // so we can use them to validate the mock login in handleLoginSubmit
     }, 1000);
   };
 
@@ -279,7 +293,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           {!isRegistering && (
              <div className="mt-4 text-center">
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                   Tài khoản demo: <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">admin / admin</span>
+                   Tài khoản demo: <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">admin / admin</span> hoặc <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">librarian / librarian</span>
                 </p>
              </div>
           )}

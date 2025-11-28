@@ -1,18 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { BookOpen, Users, Activity, ArrowRight, Book as BookIcon, Clock, Search, RotateCcw, FileQuestion, BookPlus, CalendarCheck, Info, Star, CheckCircle, AlertTriangle, Camera } from 'lucide-react';
-import { MOCK_BOOKS } from '../constants';
 import { Book } from '../types';
-import BorrowModal from './BorrowModal';
 
 interface DashboardProps {
   onNavigateToChat: (message?: string) => void;
   books: Book[];
   setBooks: React.Dispatch<React.SetStateAction<Book[]>>;
+  onOpenBorrow: (book: Book) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks }) => {
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks, onOpenBorrow }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
 
@@ -91,8 +88,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
 
   const handleBorrowClick = (e: React.MouseEvent, book: Book) => {
     e.stopPropagation(); // Prevent navigating to chat details
-    setSelectedBook(book);
-    setIsBorrowModalOpen(true);
+    onOpenBorrow(book);
   };
 
   const handleUploadClick = (e: React.MouseEvent, bookId: string) => {
@@ -153,12 +149,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
         className="hidden"
         accept="image/*"
         onChange={handleFileChange}
-      />
-
-      <BorrowModal 
-        book={selectedBook} 
-        isOpen={isBorrowModalOpen} 
-        onClose={() => setIsBorrowModalOpen(false)} 
       />
 
       {/* Welcome Section */}

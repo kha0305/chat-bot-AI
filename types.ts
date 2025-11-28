@@ -37,8 +37,9 @@ export interface LoanRecord {
   borrowDate: string;
   dueDate: string;
   returnDate?: string;
-  status: 'Borrowing' | 'Returned' | 'Overdue';
+  status: 'Borrowing' | 'Returned' | 'Overdue' | 'Reserved';
   coverUrl: string;
+  pickupTime?: string;
 }
 
 export type ViewState = 'dashboard' | 'chat' | 'history' | 'admin-dashboard' | 'admin-books';
@@ -51,7 +52,7 @@ export interface AppSettings {
   fontSize: FontSize;
 }
 
-export type UserRole = 'student' | 'admin';
+export type UserRole = 'student' | 'admin' | 'librarian';
 
 export interface User {
   id: string;
