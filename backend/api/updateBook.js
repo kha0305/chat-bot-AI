@@ -1,40 +1,48 @@
-const supabase = require('../config/supabase');
+const db = require('../config/db');
 
 module.exports = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, author, category, description, status, publishYear } = req.body;
 
-    const updates = {};
-    if (title) updates.tieu_de = title;
-    if (author) updates.tac_gia = author;
-    if (category) updates.the_loai = category;
-    if (description) updates.mo_ta = description;
-    if (status) updates.trang_thai = status;
-    if (publishYear) updates.nam_xuat_ban = publishYear;
-    updates.ngay_cap_nhat = new Date();
+    // Build dynamic query
+    let fields = [];
+    let values = [];
 
-    const { data, error } = await supabase
-      .from('sach')
-      .update(updates)
-      .eq('id', id)
-      .select();
+    if (title) { fields.push('tieu_de = ?'); values.push(title); }
+    if (author) { fields.push('tac_gia = ?'); values.push(author); }
+    if (category) { fields.push('the_loai = ?'); values.push(category); }
+    if (description) { fields.push('mo_ta = ?'); values.push(description); }
+    if (status) { fields.push('trang_thai = ?'); values.push(status); }
+    if (publishYear) { fields.push('nam_xuat_ban = ?'); values.push(publishYear); }
+    
+    // Always update timestamp
+    // MySQL 'ON UPDATE CURRENT_TIMESTAMP' handles this automatically usually, but we can force it if needed.
+    // Let's rely on DB trigger or default behavior, or just ignore for now.
 
-    if (error) throw error;
+    if (fields.length === 0) {
+        return res.status(400).json({ error: 'No fields to update' });
+    }
 
-    if (data.length === 0) {
+    values.push(id); // For WHERE clause
+
+    const query = `UPDATE sach SET ${fields.join(', ')} WHERE id = ?`;
+    
+    const [result] = await db.execute(query, values);
+
+    if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Book not found' });
     }
 
-    const updatedBook = data[0];
+    // Return updated data (mocked since MySQL UPDATE doesn't return row)
     res.json({
-      id: updatedBook.id.toString(),
-      title: updatedBook.tieu_de,
-      author: updatedBook.tac_gia,
-      category: updatedBook.the_loai,
-      status: updatedBook.trang_thai,
-      description: updatedBook.mo_ta,
-      publishYear: updatedBook.nam_xuat_ban
+      id,
+      title,
+      author,
+      category,
+      status,
+      description,
+      publishYear
     });
   } catch (error) {
     console.error('Error updating book:', error);

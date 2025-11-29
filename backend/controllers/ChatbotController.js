@@ -1,6 +1,5 @@
-const supabase = require('../config/supabase');
+const db = require('../config/db');
 const aiIntentAnalyzer = require('../services/AIIntentAnalyzer');
-const bookService = require('../services/BookService'); // We might need to update this service too or bypass it
 
 class ChatbotController {
   
@@ -8,19 +7,7 @@ class ChatbotController {
     try {
       const { message, userId, userName } = req.body;
       
-      // 1. Save User Message to DB
-      if (userId) {
-        // Ensure user exists or create temp user? 
-        // For now, we just log the chat. In a real app, we'd check 'nguoi_dung' table.
-        // Let's assume we just log to 'log_hoi_thoai' with null user_id if not found, 
-        // or we store the raw message.
-        
-        // Actually, 'log_hoi_thoai' expects 'nguoi_dung_id'. 
-        // If we don't have a real user ID from DB, we might skip linking or create a guest user.
-        // For simplicity in this demo, we'll just log the text content.
-      }
-
-      // 2. Analyze Intent
+      // 1. Analyze Intent
       const analysis = await aiIntentAnalyzer.analyze(message);
       
       let responseData = {
@@ -32,17 +19,15 @@ class ChatbotController {
       const lowerMsg = message.toLowerCase();
       if (lowerMsg.includes('gặp nhân viên') || lowerMsg.includes('gặp thủ thư') || lowerMsg.includes('chat với người') || lowerMsg.includes('tư vấn viên')) {
           responseData.message = "Mình đã gửi yêu cầu hỗ trợ đến các thủ thư. Vui lòng đợi trong giây lát, nhân viên sẽ phản hồi bạn ngay tại đây.";
-          // TODO: Create a record in a 'chat_sessions' table if we had one for admin support
       } else {
           switch (analysis.intent) {
             case 'SEARCH_BOOK':
             case 'CHECK_STATUS':
-              // Search in Supabase
-              const { data: books } = await supabase
-                .from('sach')
-                .select('*')
-                .ilike('tieu_de', `%${analysis.keywords}%`)
-                .limit(5);
+              // Search in MySQL
+              const [books] = await db.execute(
+                `SELECT * FROM sach WHERE tieu_de LIKE ? LIMIT 5`,
+                [`%${analysis.keywords}%`]
+              );
 
               if (books && books.length > 0) {
                 responseData.books = books.map(b => ({
@@ -78,13 +63,18 @@ class ChatbotController {
 
       // 3. Save Bot Response to DB (log_hoi_thoai)
       if (userId) {
-          await supabase.from('log_hoi_thoai').insert([
-              {
-                  // nguoi_dung_id: ...
-                  cau_hoi: message,
-                  phan_hoi: responseData.message
-              }
-          ]);
+          // Assuming userId is valid int, if not skip or handle
+          // If userId is 'admin' or string, this might fail if column is INT.
+          // Schema says nguoi_dung_id is BIGINT.
+          // If userId comes from frontend as string '1', it works.
+          // If it's 'admin', it fails.
+          // Let's check if userId is numeric.
+          if (!isNaN(userId)) {
+              await db.execute(
+                  `INSERT INTO log_hoi_thoai (nguoi_dung_id, cau_hoi, phan_hoi) VALUES (?, ?, ?)`,
+                  [userId, message, responseData.message]
+              );
+          }
       }
 
       res.json(responseData);

@@ -1,37 +1,24 @@
-const supabase = require('../config/supabase');
+const db = require('../config/db');
 
 module.exports = async (req, res) => {
   try {
     const { title, author, category, description, coverUrl, status, publishYear } = req.body;
 
-    const { data, error } = await supabase
-      .from('sach')
-      .insert([
-        {
-          tieu_de: title,
-          tac_gia: author,
-          the_loai: category,
-          mo_ta: description,
-          trang_thai: status || 'Available',
-          nam_xuat_ban: publishYear,
-          // Note: You might need to add 'anh_bia' column to your schema if you want to save coverUrl
-          // For now, we'll skip saving coverUrl to DB if column doesn't exist, or you should add it.
-        }
-      ])
-      .select();
+    const [result] = await db.execute(
+      `INSERT INTO sach (tieu_de, tac_gia, the_loai, mo_ta, trang_thai, nam_xuat_ban, anh_bia) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [title, author, category, description, status || 'Available', publishYear, coverUrl]
+    );
 
-    if (error) throw error;
-
-    const newBook = data[0];
     res.status(201).json({
-      id: newBook.id.toString(),
-      title: newBook.tieu_de,
-      author: newBook.tac_gia,
-      category: newBook.the_loai,
-      status: newBook.trang_thai,
-      coverUrl: coverUrl, // Return what was sent for UI optimism
-      description: newBook.mo_ta,
-      publishYear: newBook.nam_xuat_ban
+      id: result.insertId.toString(),
+      title,
+      author,
+      category,
+      status: status || 'Available',
+      coverUrl,
+      description,
+      publishYear
     });
   } catch (error) {
     console.error('Error adding book:', error);

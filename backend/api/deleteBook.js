@@ -1,15 +1,14 @@
-const supabase = require('../config/supabase');
+const db = require('../config/db');
 
 module.exports = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
-      .from('sach')
-      .delete()
-      .eq('id', id);
+    const [result] = await db.execute('DELETE FROM sach WHERE id = ?', [id]);
 
-    if (error) throw error;
+    if (result.affectedRows === 0) {
+        // It's okay if it doesn't exist, but usually we might want to know
+    }
 
     res.json({ message: 'Book deleted successfully' });
   } catch (error) {

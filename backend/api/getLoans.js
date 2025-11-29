@@ -1,39 +1,25 @@
-const supabase = require('../config/supabase');
+const db = require('../config/db');
 
 module.exports = async (req, res) => {
   try {
-    // Fetch loans from 'phieu_muon' and join with 'sach' to get details
-    const { data, error } = await supabase
-      .from('phieu_muon')
-      .select(`
-        id,
-        ngay_muon,
-        ngay_hen_tra,
-        ngay_tra,
-        trang_thai,
-        ghi_chu,
-        sach (
-          id,
-          tieu_de,
-          tac_gia,
-          anh_bia
-        )
-      `)
-      .order('ngay_muon', { ascending: false });
+    const [rows] = await db.execute(`
+      SELECT pm.*, s.tieu_de, s.tac_gia, s.anh_bia 
+      FROM phieu_muon pm 
+      LEFT JOIN sach s ON pm.sach_id = s.id 
+      ORDER BY pm.ngay_muon DESC
+    `);
 
-    if (error) throw error;
-
-    const loans = data.map(loan => ({
+    const loans = rows.map(loan => ({
       id: loan.id.toString(),
-      bookId: loan.sach?.id.toString(),
-      bookTitle: loan.sach?.tieu_de || 'Unknown Book',
-      author: loan.sach?.tac_gia || 'Unknown Author',
+      bookId: loan.sach_id ? loan.sach_id.toString() : null,
+      bookTitle: loan.tieu_de || 'Unknown Book',
+      author: loan.tac_gia || 'Unknown Author',
       borrowDate: loan.ngay_muon,
       dueDate: loan.ngay_hen_tra,
       returnDate: loan.ngay_tra,
       status: loan.trang_thai,
-      coverUrl: loan.sach?.anh_bia || 'https://via.placeholder.com/150',
-      pickupTime: loan.ghi_chu // Assuming we stored pickup time in notes
+      coverUrl: loan.anh_bia || 'https://via.placeholder.com/150',
+      pickupTime: loan.ghi_chu
     }));
 
     res.json(loans);
