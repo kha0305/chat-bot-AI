@@ -10,9 +10,7 @@ import LoanHistory from './components/LoanHistory';
 import SettingsModal from './components/SettingsModal';
 import BorrowModal from './components/BorrowModal';
 import { ChatMessage, Sender, ViewState, AppSettings, User, UserRole, Book, LoanRecord } from './types';
-import { createChatSession, sendMessageStream } from './services/geminiService';
-import { fetchBooks, fetchLoans, createLoan, createBook, updateBook, deleteBook } from './services/api';
-import { Chat } from '@google/genai';
+import { fetchBooks, fetchLoans, createLoan, createBook, updateBook, deleteBook, sendMessage } from './services/api';
 import { MOCK_BOOKS, MOCK_HISTORY } from './constants';
 
 const App: React.FC = () => {
@@ -41,7 +39,6 @@ const App: React.FC = () => {
   });
   
   // Refs
-  const chatSessionRef = useRef<Chat | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch initial data
@@ -108,25 +105,13 @@ const App: React.FC = () => {
   // Initial Greeting (Only when starting chat)
   useEffect(() => {
     if (user && messages.length === 0 && user.role === 'student') {
-        try {
-            chatSessionRef.current = createChatSession();
-            const initialMsg: ChatMessage = {
-                id: 'init',
-                sender: Sender.BOT,
-                text: `Chào ${user.name}! 👋\n\nMình là **DTU LibBot**, trợ lý ảo chính thức của Thư viện Đại học Duy Tân.\n\nMình sẵn sàng hỗ trợ bạn tra cứu sách, tìm hiểu nội quy thư viện hoặc thông tin về giờ mở cửa. Bạn cần giúp gì cho việc học tập hôm nay?`,
-                timestamp: new Date()
-            };
-            setMessages([initialMsg]);
-        } catch (e) {
-            const errorMsg: ChatMessage = {
-                id: 'err-init',
-                sender: Sender.BOT,
-                text: "⚠️ Không tìm thấy API Key.\n\nVui lòng đảm bảo bạn đã cấu hình biến môi trường `API_KEY` trong phần cài đặt của dự án.",
-                timestamp: new Date(),
-                isError: true
-            };
-            setMessages([errorMsg]);
-        }
+        const initialMsg: ChatMessage = {
+            id: 'init',
+            sender: Sender.BOT,
+            text: `Chào ${user.name}! 👋\n\nMình là **DTU LibBot**, trợ lý ảo chính thức của Thư viện Đại học Duy Tân.\n\nMình sẵn sàng hỗ trợ bạn tra cứu sách, tìm hiểu nội quy thư viện hoặc thông tin về giờ mở cửa. Bạn cần giúp gì cho việc học tập hôm nay?`,
+            timestamp: new Date()
+        };
+        setMessages([initialMsg]);
     }
   }, [user, messages.length]);
 
@@ -156,7 +141,6 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setUser(null);
     setMessages([]);
-    chatSessionRef.current = null;
   };
 
   // Handler to open borrow modal (used in Dashboard AND Chat)
@@ -211,15 +195,6 @@ const App: React.FC = () => {
   };
 
   const handleSend = async (text: string, image?: string) => {
-    if (!chatSessionRef.current) {
-        try {
-            chatSessionRef.current = createChatSession();
-        } catch (e) {
-            console.error("Failed to init session", e);
-            return;
-        }
-    }
-
     const userMsgId = Date.now().toString();
     const userMsg: ChatMessage = {
       id: userMsgId,
@@ -229,42 +204,20 @@ const App: React.FC = () => {
       timestamp: new Date()
     };
 
-    // Optimistically add user message
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
 
     try {
-      const botMsgId = (Date.now() + 1).toString();
+      const response = await sendMessage(text);
       
-      // Create placeholder for bot message
-      setMessages(prev => [
-        ...prev, 
-        {
+      const botMsgId = (Date.now() + 1).toString();
+      const botMsg: ChatMessage = {
           id: botMsgId,
           sender: Sender.BOT,
-          text: "", // Will fill gradually
+          text: response.message,
           timestamp: new Date()
-        }
-      ]);
-
-      let accumulatedText = "";
-
-      await sendMessageStream(chatSessionRef.current, text, image, (chunk) => {
-        accumulatedText += chunk;
-        
-        // Update the last message with new chunk
-        setMessages(prev => {
-          const newMessages = [...prev];
-          const lastMsgIndex = newMessages.findIndex(m => m.id === botMsgId);
-          if (lastMsgIndex !== -1) {
-            newMessages[lastMsgIndex] = {
-              ...newMessages[lastMsgIndex],
-              text: accumulatedText
-            };
-          }
-          return newMessages;
-        });
-      });
+      };
+      setMessages(prev => [...prev, botMsg]);
 
     } catch (error) {
       const errorId = (Date.now() + 2).toString();
@@ -273,7 +226,7 @@ const App: React.FC = () => {
         {
           id: errorId,
           sender: Sender.BOT,
-          text: "Xin lỗi, đã có lỗi xảy ra khi xử lý yêu cầu của bạn. Vui lòng kiểm tra kết nối hoặc API Key.",
+          text: "Xin lỗi, đã có lỗi xảy ra khi kết nối với server.",
           timestamp: new Date(),
           isError: true
         }
@@ -285,17 +238,12 @@ const App: React.FC = () => {
 
   const clearHistory = () => {
     if(window.confirm("Bạn có chắc chắn muốn xóa lịch sử chat?")) {
-        try {
-            chatSessionRef.current = createChatSession(); // Reset context
-            setMessages([{
-                id: Date.now().toString(),
-                sender: Sender.BOT,
-                text: "Lịch sử trò chuyện đã được xóa. Mình có thể giúp gì cho bạn?",
-                timestamp: new Date()
-            }]);
-        } catch (e) {
-            console.error("Failed to reset session", e);
-        }
+        setMessages([{
+            id: Date.now().toString(),
+            sender: Sender.BOT,
+            text: "Lịch sử trò chuyện đã được xóa. Mình có thể giúp gì cho bạn?",
+            timestamp: new Date()
+        }]);
     }
   };
 

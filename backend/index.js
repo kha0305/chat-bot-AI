@@ -11,13 +11,15 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.get('/api/books', require('./api/getBooks'));
-app.post('/api/books', require('./api/createBook'));
-app.put('/api/books/:id', require('./api/updateBook'));
-app.delete('/api/books/:id', require('./api/deleteBook'));
+// Routes
+app.get('/api/get-books', require('./api/getBooks'));
+app.post('/api/create-book', require('./api/createBook'));
+app.put('/api/update-book/:id', require('./api/updateBook'));
+app.delete('/api/delete-book/:id', require('./api/deleteBook'));
 
-app.get('/api/loans', require('./api/getLoans'));
-app.post('/api/loans', require('./api/createLoan'));
+app.get('/api/get-loans', require('./api/getLoans'));
+app.post('/api/create-loan', require('./api/createLoan'));
+app.post('/api/chat-with-ai', require('./api/chat'));
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
