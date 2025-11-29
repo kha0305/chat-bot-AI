@@ -61,6 +61,28 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
 
   return (
     <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4 sticky bottom-0 z-20 transition-colors">
+      
+      {/* Suggested Questions */}
+      {!input && !selectedImage && (
+        <div className="max-w-4xl mx-auto mb-3 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          {[
+            "Thư viện mở cửa khi nào?",
+            "Làm sao để mượn sách?",
+            "Tìm sách về AI",
+            "Quy định phạt quá hạn",
+            "Gặp nhân viên"
+          ].map((q, idx) => (
+            <button
+              key={idx}
+              onClick={() => onSend(q)}
+              className="whitespace-nowrap px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-brand-100 dark:hover:bg-brand-900/30 text-gray-600 dark:text-gray-300 text-xs rounded-full border border-gray-200 dark:border-gray-600 transition-colors"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Image Preview */}
       {selectedImage && (
         <div className="max-w-4xl mx-auto mb-2 flex items-start">
@@ -80,7 +102,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend, isLoading }) => {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto relative flex items-end gap-2 bg-gray-50 dark:bg-gray-900 p-2 rounded-xl border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-brand-500 transition-all shadow-sm">
+      <div className="max-w-4xl mx-auto relative flex items-end gap-2 bg-gray-50 dark:bg-gray-900 p-2 rounded-xl transition-all shadow-sm">
         
         {/* Hidden File Input */}
         <input 

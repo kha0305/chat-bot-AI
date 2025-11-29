@@ -63,8 +63,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
+        // Fix: Send 'fullName' instead of 'name' to match backend expectation
         await registerUser({
-            name: regName,
+            fullName: regName,
             studentId: regStudentId,
             username: regUsername,
             password: regPassword

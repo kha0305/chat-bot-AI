@@ -8,18 +8,42 @@ class ChatbotController {
       const { message, userId, userName } = req.body;
       
       // 1. Analyze Intent
-      const analysis = await aiIntentAnalyzer.analyze(message);
+      // We wrap this in a try-catch specifically to ensure we can still process basic keywords if AI fails
+      let analysis = { intent: 'OTHER', keywords: '', response: '' };
+      try {
+          analysis = await aiIntentAnalyzer.analyze(message);
+      } catch (aiError) {
+          console.error("AI Service Failed:", aiError.message);
+          // Keep default 'OTHER' intent
+      }
       
       let responseData = {
         message: analysis.response,
         books: []
       };
 
-      // Check for explicit human request
+      // Check for explicit human request (Keyword Matching - High Priority)
       const lowerMsg = message.toLowerCase();
-      if (lowerMsg.includes('gặp nhân viên') || lowerMsg.includes('gặp thủ thư') || lowerMsg.includes('chat với người') || lowerMsg.includes('tư vấn viên')) {
-          responseData.message = "Mình đã gửi yêu cầu hỗ trợ đến các thủ thư. Vui lòng đợi trong giây lát, nhân viên sẽ phản hồi bạn ngay tại đây.";
+      const humanKeywords = ['gặp nhân viên', 'gặp thủ thư', 'chat với người', 'tư vấn viên', 'hỗ trợ trực tuyến'];
+      
+      if (humanKeywords.some(kw => lowerMsg.includes(kw))) {
+          // Create support ticket
+          if (userId && !isNaN(userId)) {
+              try {
+                  await db.execute(
+                      `INSERT INTO ho_tro_truc_tuyen (nguoi_dung_id, noi_dung, trang_thai) VALUES (?, ?, 'cho_xu_ly')`,
+                      [userId, message]
+                  );
+                  responseData.message = "Hệ thống đã ghi nhận yêu cầu của bạn. Nhân viên thư viện sẽ sớm liên hệ lại qua khung chat này hoặc email.";
+              } catch (dbError) {
+                  console.error("Failed to create support ticket:", dbError);
+                  responseData.message = "Hiện tại hệ thống đang quá tải. Vui lòng thử lại sau hoặc đến trực tiếp quầy thủ thư.";
+              }
+          } else {
+              responseData.message = "Bạn cần đăng nhập để gửi yêu cầu gặp nhân viên hỗ trợ.";
+          }
       } else {
+          // Normal AI processing
           switch (analysis.intent) {
             case 'SEARCH_BOOK':
             case 'CHECK_STATUS':
@@ -55,25 +79,34 @@ class ChatbotController {
                 responseData.message = "Thư viện mở cửa từ 7:30 đến 21:00 các ngày trong tuần.";
               }
               break;
+            
+            case 'GREETING':
+                if (!responseData.message) {
+                    responseData.message = "Xin chào! Mình là LibBot. Mình có thể giúp gì cho bạn hôm nay?";
+                }
+                break;
 
             default:
+               if (!responseData.message) {
+                   responseData.message = "Xin lỗi, mình chưa hiểu ý bạn. Bạn có thể hỏi về sách hoặc quy định thư viện.";
+               }
               break;
           }
       }
 
       // 3. Save Bot Response to DB (log_hoi_thoai)
-      if (userId) {
-          // Assuming userId is valid int, if not skip or handle
-          // If userId is 'admin' or string, this might fail if column is INT.
-          // Schema says nguoi_dung_id is BIGINT.
-          // If userId comes from frontend as string '1', it works.
-          // If it's 'admin', it fails.
-          // Let's check if userId is numeric.
-          if (!isNaN(userId)) {
-              await db.execute(
-                  `INSERT INTO log_hoi_thoai (nguoi_dung_id, cau_hoi, phan_hoi) VALUES (?, ?, ?)`,
-                  [userId, message, responseData.message]
-              );
+      if (userId && !isNaN(userId)) {
+          try {
+              // Optional: Check if user exists first
+               const [users] = await db.execute('SELECT id FROM nguoi_dung WHERE id = ?', [userId]);
+               if (users.length > 0) {
+                  await db.execute(
+                      `INSERT INTO log_hoi_thoai (nguoi_dung_id, cau_hoi, phan_hoi) VALUES (?, ?, ?)`,
+                      [userId, message, responseData.message]
+                  );
+               }
+          } catch (logError) {
+              console.error("Failed to log chat:", logError.message);
           }
       }
 

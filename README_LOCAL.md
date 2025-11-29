@@ -5,8 +5,11 @@
 1. Mở **XAMPP**, bật **Apache** và **MySQL**.
 2. Vào **phpMyAdmin** (`http://localhost/phpmyadmin`).
 3. Tạo database mới tên: `library_db`.
-4. Chọn database `library_db` -> Tab **Import** -> Chọn file `backend/database/schema.sql` -> Bấm **Go**.
-5. (Tùy chọn) Import tiếp file `backend/database/seed_users.sql` để có sẵn tài khoản Admin.
+4. Mở terminal tại thư mục `backend` và chạy lệnh:
+   ```bash
+   npm run db:setup
+   ```
+   _Lệnh này sẽ tự động tạo bảng và thêm dữ liệu mẫu (Admin, Sách, ...)._
 
 ## 2. Cấu hình Backend
 

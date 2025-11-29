@@ -42,8 +42,11 @@ Hệ thống Chatbot hỗ trợ thư viện thông minh, tích hợp AI để t�
 1. Khởi động **Apache** và **MySQL** trong XAMPP.
 2. Truy cập [phpMyAdmin](http://localhost/phpmyadmin).
 3. Tạo database mới tên: `library_db`.
-4. Import file `backend/database/schema.sql` vào database vừa tạo.
-5. (Tùy chọn) Import tiếp `backend/database/seed_users.sql` để tạo tài khoản Admin mặc định.
+4. Chạy lệnh sau trong thư mục `backend` để tự động tạo bảng và thêm dữ liệu mẫu:
+   ```bash
+   npm run db:setup
+   ```
+   _Lệnh này sẽ tự động chạy file `init_db.sql`._
 
 ### Bước 2: Cấu hình Backend
 

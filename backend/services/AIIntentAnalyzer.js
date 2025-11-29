@@ -3,7 +3,14 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 class AIIntentAnalyzer {
   constructor() {
     this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // Revert to gemini-pro as it is the most stable free tier model
     this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+    console.log("🤖 AIIntentAnalyzer initialized with model: gemini-pro");
+    if (!process.env.GEMINI_API_KEY) {
+        console.error("❌ ERROR: GEMINI_API_KEY is missing in .env");
+    } else {
+        console.log("✅ GEMINI_API_KEY is present.");
+    }
   }
 
   /**
