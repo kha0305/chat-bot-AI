@@ -17,9 +17,10 @@ class AIIntentAnalyzer {
       Return a JSON object with:
       - "intent": One of ["SEARCH_BOOK", "CHECK_STATUS", "LIBRARY_INFO", "GREETING", "OTHER", "AMBIGUOUS"]
       - "keywords": A string of keywords for search (if SEARCH_BOOK or CHECK_STATUS). If none, use empty string.
-      - "response": A natural language response (if GREETING, LIBRARY_INFO, OTHER, or AMBIGUOUS).
+      - "response": A natural language response in Vietnamese (if GREETING, LIBRARY_INFO, OTHER, or AMBIGUOUS).
       
       Rules:
+      - ALWAYS respond in Vietnamese.
       - If user asks about library hours, location, or rules -> LIBRARY_INFO.
       - If user says hello/hi -> GREETING.
       - If user asks for a book by name, author, or category -> SEARCH_BOOK.

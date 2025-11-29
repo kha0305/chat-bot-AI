@@ -5,12 +5,15 @@ import MessageBubble from './components/MessageBubble';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
+import AdminChat from './components/AdminChat';
 import Login from './components/Login';
 import LoanHistory from './components/LoanHistory';
 import SettingsModal from './components/SettingsModal';
 import BorrowModal from './components/BorrowModal';
+import HelpModal from './components/HelpModal';
+import ProfileModal from './components/ProfileModal';
 import { ChatMessage, Sender, ViewState, AppSettings, User, UserRole, Book, LoanRecord } from './types';
-import { fetchBooks, fetchLoans, createLoan, createBook, updateBook, deleteBook, sendMessage } from './services/api';
+import { fetchBooks, fetchLoans, createLoan, createBook, updateBook, deleteBook, sendMessage, fetchUserChatHistory } from './services/api';
 import { MOCK_BOOKS, MOCK_HISTORY } from './constants';
 
 const App: React.FC = () => {
@@ -24,6 +27,8 @@ const App: React.FC = () => {
   // Modal State (Lifted from Dashboard)
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -115,6 +120,40 @@ const App: React.FC = () => {
     }
   }, [user, messages.length]);
 
+  // Poll for new messages when in chat view
+  useEffect(() => {
+    if (currentView === 'chat' && user) {
+        const pollMessages = async () => {
+            try {
+                const history = await fetchUserChatHistory(user.id);
+                if (history && history.length > 0) {
+                    const mappedMessages = history.map((msg: any) => ({
+                        id: msg.id,
+                        sender: (msg.sender === 'admin' || msg.sender === 'librarian') ? Sender.ADMIN : (msg.sender === 'user' ? Sender.USER : Sender.BOT),
+                        text: msg.text,
+                        timestamp: new Date(msg.timestamp),
+                        isError: false
+                    }));
+                    
+                    const initialMsg: ChatMessage = {
+                        id: 'init',
+                        sender: Sender.BOT,
+                        text: `Chào ${user.name}! 👋\n\nMình là **DTU LibBot**, trợ lý ảo chính thức của Thư viện Đại học Duy Tân.\n\nMình sẵn sàng hỗ trợ bạn tra cứu sách, tìm hiểu nội quy thư viện hoặc thông tin về giờ mở cửa. Bạn cần giúp gì cho việc học tập hôm nay?`,
+                        timestamp: new Date()
+                    };
+                    
+                    setMessages([initialMsg, ...mappedMessages]);
+                }
+            } catch (error) {
+                console.error("Polling error", error);
+            }
+        };
+
+        const interval = setInterval(pollMessages, 3000);
+        return () => clearInterval(interval);
+    }
+  }, [currentView, user]);
+
   // Auto-scroll
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -141,6 +180,10 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setUser(null);
     setMessages([]);
+  };
+
+  const handleUpdateUser = (updatedUser: User) => {
+    setUser(updatedUser);
   };
 
   // Handler to open borrow modal (used in Dashboard AND Chat)
@@ -208,7 +251,8 @@ const App: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await sendMessage(text);
+      // Pass userId and userName to backend for chat history
+      const response = await sendMessage(text, user?.id, user?.name);
       
       const botMsgId = (Date.now() + 1).toString();
       const botMsg: ChatMessage = {
@@ -262,6 +306,7 @@ const App: React.FC = () => {
       case 'dashboard': return 'Tổng quan';
       case 'admin-dashboard': return user?.role === 'admin' ? 'Tổng quan Admin' : 'Tổng quan Thư viện';
       case 'admin-books': return 'Quản lý sách';
+      case 'admin-chat': return 'Hỗ trợ trực tuyến';
       case 'chat': return 'DTU LibBot';
       case 'history': return 'Sổ tay thư viện';
       default: return 'DTU Library';
@@ -299,6 +344,18 @@ const App: React.FC = () => {
         onBorrowSuccess={handleBorrowSuccess} 
       />
 
+      <HelpModal 
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
+      />
+
+      <ProfileModal 
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={user}
+        onUpdateUser={handleUpdateUser}
+      />
+
       {/* Sidebar */}
       <Sidebar 
         isOpen={isSidebarOpen} 
@@ -306,6 +363,8 @@ const App: React.FC = () => {
         currentView={currentView}
         onViewChange={setCurrentView}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenHelp={() => setIsHelpModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
         userRole={user.role}
         userName={user.name}
         onLogout={handleLogout}
@@ -389,6 +448,12 @@ const App: React.FC = () => {
                       onUpdateBook={handleUpdateBook}
                       onDeleteBook={handleDeleteBook}
                     />
+                </div>
+            )}
+
+            {currentView === 'admin-chat' && (
+                <div className="flex-1 p-6 overflow-hidden">
+                    <AdminChat adminName={user.name} />
                 </div>
             )}
 

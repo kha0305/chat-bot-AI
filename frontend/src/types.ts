@@ -1,6 +1,7 @@
 export enum Sender {
   USER = 'user',
-  BOT = 'model'
+  BOT = 'model',
+  ADMIN = 'admin'
 }
 
 export interface ChatMessage {
@@ -21,6 +22,8 @@ export interface Book {
   status: 'Available' | 'Borrowed' | 'Maintenance';
   coverUrl: string;
   description: string;
+  location?: string;
+  publishYear?: number;
 }
 
 export interface LibraryPolicy {
@@ -43,7 +46,7 @@ export interface LoanRecord {
   pickupTime?: string;
 }
 
-export type ViewState = 'dashboard' | 'chat' | 'history' | 'admin-dashboard' | 'admin-books';
+export type ViewState = 'dashboard' | 'chat' | 'history' | 'admin-dashboard' | 'admin-books' | 'admin-chat';
 
 export type Theme = 'light' | 'dark';
 export type FontSize = 'small' | 'medium' | 'large';
@@ -60,4 +63,7 @@ export interface User {
   name: string;
   role: UserRole;
   avatar?: string;
+  email?: string;
+  phone?: string;
+  studentId?: string;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, MessageSquare, BookMarked, HelpCircle, LogOut, Settings, BookOpen, Users } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, BookMarked, HelpCircle, LogOut, Settings, BookOpen, Users, User } from 'lucide-react';
 import { ViewState, UserRole } from '../types';
 
 interface SidebarProps {
@@ -8,12 +8,14 @@ interface SidebarProps {
   currentView: ViewState;
   onViewChange: (view: ViewState) => void;
   onOpenSettings?: () => void;
+  onOpenHelp?: () => void;
+  onOpenProfile?: () => void;
   userRole: UserRole;
   userName: string;
   onLogout: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewChange, onOpenSettings, userRole, userName, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewChange, onOpenSettings, onOpenHelp, onOpenProfile, userRole, userName, onLogout }) => {
   
   const handleNavigation = (view: ViewState) => {
     onViewChange(view);
@@ -27,6 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
       return [
         { id: 'admin-dashboard' as ViewState, label: userRole === 'admin' ? 'Tổng quan Admin' : 'Tổng quan Thư viện', icon: LayoutDashboard },
         { id: 'admin-books' as ViewState, label: 'Quản lý sách', icon: BookOpen },
+        { id: 'admin-chat' as ViewState, label: 'Hỗ trợ trực tuyến', icon: MessageSquare },
       ];
     }
     return [
@@ -130,7 +133,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
             </>
           )}
 
-          <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors mt-2">
+          <button 
+            onClick={onOpenHelp}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors mt-2"
+          >
             <HelpCircle size={20} className="text-gray-400 dark:text-gray-500" />
             Trợ giúp & Hướng dẫn
           </button>
@@ -146,24 +152,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
 
         {/* Footer User Profile */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 transition-colors">
-          <div className="flex items-center gap-3 mb-3">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border ${
+          <button 
+            onClick={onOpenProfile}
+            className="flex items-center gap-3 mb-3 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700/50 p-2 -ml-2 rounded-lg transition-colors group"
+          >
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border overflow-hidden ${
               userRole === 'admin' 
                 ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' 
                 : userRole === 'librarian'
                 ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
                 : 'bg-brand-100 text-brand-700 border-brand-200 dark:bg-brand-900/30 dark:text-brand-400'
             }`}>
-              {userName.charAt(0)}
+              {/* Show avatar if available, else initial */}
+              <User size={20} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">{userName}</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{userName}</p>
               <p className="text-[10px] text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                 Đang trực tuyến
               </p>
             </div>
-          </div>
+          </button>
           <button 
             onClick={onLogout}
             className="w-full flex items-center justify-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors py-1"

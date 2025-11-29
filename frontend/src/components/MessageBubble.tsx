@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChatMessage, Sender, FontSize, Book } from '../types';
-import { User, Bot, CalendarCheck, Book as BookIcon, ChevronRight } from 'lucide-react';
+import { User, Bot, CalendarCheck, Book as BookIcon, ChevronRight, ShieldCheck } from 'lucide-react';
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -11,6 +11,7 @@ interface MessageBubbleProps {
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medium', books, onBorrow }) => {
   const isUser = message.sender === Sender.USER;
+  const isAdmin = message.sender === Sender.ADMIN;
 
   // Simple parser to handle bolding
   const formatText = (text: string) => {
@@ -36,7 +37,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medi
   // Extract Mentioned Books
   // We look for book titles from our 'books' prop that appear in the message text.
   let mentionedBooks: Book[] = [];
-  if (!isUser && books && onBorrow) {
+  if (!isUser && !isAdmin && books && onBorrow) {
     // Sort books by title length descending to match longest titles first to avoid partial matches errors
     const sortedBooks = [...books].sort((a, b) => b.title.length - a.title.length);
     // Use a Set to avoid duplicates if book is mentioned multiple times
@@ -58,8 +59,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medi
       <div className={`flex max-w-[95%] sm:max-w-[85%] md:max-w-[75%] lg:max-w-[65%] ${isUser ? 'flex-row-reverse' : 'flex-row'} items-start gap-3`}>
         
         {/* Avatar */}
-        <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${isUser ? 'bg-brand-600 dark:bg-brand-700' : 'bg-emerald-600 dark:bg-emerald-700'} text-white shadow-sm mt-0.5`}>
-          {isUser ? <User size={18} /> : <Bot size={18} />}
+        <div className={`flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
+          isUser ? 'bg-brand-600 dark:bg-brand-700' : 
+          isAdmin ? 'bg-orange-500 dark:bg-orange-600' : 'bg-emerald-600 dark:bg-emerald-700'
+        } text-white shadow-sm mt-0.5`}>
+          {isUser ? <User size={18} /> : isAdmin ? <ShieldCheck size={18} /> : <Bot size={18} />}
         </div>
 
         {/* Bubble content wrapper */}
@@ -68,6 +72,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, fontSize = 'medi
             className={`px-5 py-3.5 shadow-md overflow-hidden transition-all ${getTextSizeClass()} ${
               isUser 
                 ? 'bg-brand-600 dark:bg-brand-700 text-white rounded-2xl rounded-tr-none' 
+                : isAdmin
+                ? 'bg-orange-50 dark:bg-orange-900/20 text-gray-800 dark:text-gray-100 border border-orange-200 dark:border-orange-800 rounded-2xl rounded-tl-none'
                 : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-tl-none'
             } ${message.isError ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800' : ''}`}
           >

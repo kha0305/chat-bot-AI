@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { BookOpen, Users, AlertCircle, Plus, Trash2, Search, Edit, MoreVertical, CheckCircle } from 'lucide-react';
+import { BookOpen, Users, AlertCircle, Plus, Trash2, Search, Edit, X, Download, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Book, UserRole, ViewState, LoanRecord } from '../types';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { 
+  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid
+} from 'recharts';
 
 interface AdminDashboardProps {
   books: Book[];
@@ -25,6 +28,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDeleteBook
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
@@ -36,22 +43,102 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     description: ''
   });
 
+  const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
+  
+  // Multi-select state
+  const [selectedBookIds, setSelectedBookIds] = useState<string[]>([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+
   // Filter books
-  const filteredBooks = books.filter(book => 
-    book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    book.author.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBooks = books.filter(book => {
+    const matchesSearch = book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          book.author.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || book.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredBooks.length / itemsPerPage);
+  const paginatedBooks = filteredBooks.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   );
+
+  // Reset page when filter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
 
   const overdueCount = loans ? loans.filter(l => l.status === 'Overdue').length : 0;
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa sách này không?')) {
+  // Single Delete Handlers
+  const handleDeleteClick = (book: Book) => {
+    setBookToDelete(book);
+  };
+
+  const confirmDelete = async () => {
+    if (bookToDelete) {
       if (onDeleteBook) {
-        await onDeleteBook(id);
+        await onDeleteBook(bookToDelete.id);
       } else {
-        setBooks(prev => prev.filter(b => b.id !== id));
+        setBooks(prev => prev.filter(b => b.id !== bookToDelete.id));
       }
+      // Also remove from selection if present
+      setSelectedBookIds(prev => prev.filter(id => id !== bookToDelete.id));
+      setBookToDelete(null);
     }
+  };
+
+  // Bulk Delete Handlers
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+        const allFilteredIds = filteredBooks.map(b => b.id);
+        setSelectedBookIds(allFilteredIds);
+    } else {
+        setSelectedBookIds([]);
+    }
+  };
+
+  const handleSelectBook = (id: string) => {
+    setSelectedBookIds(prev => 
+        prev.includes(id) ? prev.filter(bookId => bookId !== id) : [...prev, id]
+    );
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedBookIds.length === 0) return;
+
+    if (onDeleteBook) {
+        await Promise.all(selectedBookIds.map(id => onDeleteBook(id)));
+    } else {
+        setBooks(prev => prev.filter(b => !selectedBookIds.includes(b.id)));
+    }
+    setSelectedBookIds([]);
+    setShowBulkDeleteModal(false);
+  };
+
+  // Export to CSV
+  const exportToCSV = () => {
+    const BOM = "\uFEFF"; 
+    const headers = ["ID", "Tên sách", "Tác giả", "Danh mục", "Trạng thái", "Mô tả"];
+    const rows = filteredBooks.map(book => [
+      book.id,
+      `"${book.title.replace(/"/g, '""')}"`,
+      `"${book.author.replace(/"/g, '""')}"`,
+      book.category,
+      book.status === 'Available' ? 'Có sẵn' : book.status === 'Borrowed' ? 'Đang mượn' : 'Bảo trì',
+      `"${book.description.replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = BOM + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+
+    const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `danh_sach_sach_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const resetForm = () => {
@@ -126,6 +213,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     books.forEach(book => {
       categories[book.category] = (categories[book.category] || 0) + 1;
     });
+    // Use 'name' and 'value' for PieChart
     return Object.keys(categories).map(key => ({ name: key, value: categories[key] }));
   }, [books]);
 
@@ -143,6 +231,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   }, [loans]);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+  // Check if all filtered books are selected
+  const isAllSelected = filteredBooks.length > 0 && filteredBooks.every(b => selectedBookIds.includes(b.id));
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in pb-20">
@@ -192,10 +283,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-              {/* Book Categories Chart */}
+              {/* Book Categories Pie Chart */}
               <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
                   <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Phân bố sách theo danh mục</h3>
-                  <div className="h-64 w-full">
+                  <div className="h-72 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                               <Pie
@@ -203,39 +294,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                   cx="50%"
                                   cy="50%"
                                   labelLine={false}
+                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                                   outerRadius={80}
                                   fill="#8884d8"
                                   dataKey="value"
-                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                               >
                                   {bookCategoryData.map((entry, index) => (
                                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                   ))}
                               </Pie>
-                              <Tooltip />
+                              <Tooltip 
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                              />
                               <Legend />
                           </PieChart>
                       </ResponsiveContainer>
                   </div>
               </div>
 
-              {/* Loan Status Chart */}
+              {/* Loan Status Donut Chart */}
               <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
                   <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">Trạng thái mượn trả</h3>
-                  <div className="h-64 w-full">
+                  <div className="h-72 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                              data={loanStatusData}
-                              layout="vertical"
-                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                          >
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis type="number" />
-                              <YAxis dataKey="name" type="category" width={100} />
-                              <Tooltip />
-                              <Legend />
-                              <Bar dataKey="value" name="Số lượng" fill="#82ca9d" />
-                          </BarChart>
+                          <PieChart>
+                              <Pie
+                                  data={loanStatusData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={60}
+                                  outerRadius={80}
+                                  paddingAngle={5}
+                                  dataKey="value"
+                              >
+                                  {loanStatusData.map((entry, index) => (
+                                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
+                                  ))}
+                              </Pie>
+                              <Tooltip 
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                              />
+                              <Legend 
+                                verticalAlign="bottom" 
+                                height={36}
+                                iconType="circle"
+                              />
+                          </PieChart>
                       </ResponsiveContainer>
                   </div>
               </div>
@@ -246,13 +350,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Management Section */}
       {currentView === 'admin-books' && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2 whitespace-nowrap">
                   <BookOpen className="text-brand-600" size={20} />
                   Quản lý kho sách
               </h2>
-              <div className="flex w-full sm:w-auto gap-3">
-                  <div className="relative flex-1 sm:w-64">
+              
+              <div className="flex flex-col sm:flex-row w-full xl:w-auto gap-3 items-center">
+                  {/* Bulk Delete Button */}
+                  {selectedBookIds.length > 0 && (userRole === 'admin' || userRole === 'librarian') && (
+                      <button 
+                          onClick={() => setShowBulkDeleteModal(true)}
+                          className="w-full sm:w-auto px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors animate-fade-in"
+                      >
+                          <Trash2 size={18} />
+                          Xóa {selectedBookIds.length} sách
+                      </button>
+                  )}
+
+                  {/* Filter Dropdown */}
+                  <div className="relative w-full sm:w-40">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                        <Filter size={16} />
+                    </div>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none text-sm appearance-none cursor-pointer"
+                    >
+                        <option value="All">Tất cả trạng thái</option>
+                        <option value="Available">Có sẵn</option>
+                        <option value="Borrowed">Đang mượn</option>
+                        <option value="Maintenance">Bảo trì</option>
+                    </select>
+                  </div>
+
+                  {/* Search */}
+                  <div className="relative flex-1 w-full sm:w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                       <input 
                           type="text" 
@@ -262,14 +396,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 outline-none transition-all text-sm"
                       />
                   </div>
+
+                  {/* Export Button */}
+                  <button 
+                      onClick={exportToCSV}
+                      className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                      title="Xuất Excel/CSV"
+                  >
+                      <Download size={18} /> 
+                      <span className="hidden sm:inline">Xuất</span>
+                  </button>
+
+                  {/* Add Button */}
                   <button 
                       onClick={() => {
                         resetForm();
                         setIsModalOpen(true);
                       }}
-                      className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+                      className="w-full sm:w-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                   >
-                      <Plus size={18} /> Thêm sách
+                      <Plus size={18} /> 
+                      <span className="hidden sm:inline">Thêm</span>
                   </button>
               </div>
           </div>
@@ -279,6 +426,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <table className="w-full text-left border-collapse">
                   <thead>
                       <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                          {/* Checkbox Column */}
+                          {(userRole === 'admin' || userRole === 'librarian') && (
+                              <th className="px-6 py-4 w-10">
+                                  <input 
+                                      type="checkbox" 
+                                      checked={isAllSelected}
+                                      onChange={handleSelectAll}
+                                      className="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500 cursor-pointer"
+                                  />
+                              </th>
+                          )}
                           <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider w-20">Ảnh</th>
                           <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Tên sách</th>
                           <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Tác giả</th>
@@ -288,9 +446,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {filteredBooks.length > 0 ? (
-                          filteredBooks.map((book) => (
-                              <tr key={book.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                      {paginatedBooks.length > 0 ? (
+                          paginatedBooks.map((book) => (
+                              <tr key={book.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group ${selectedBookIds.includes(book.id) ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
+                                  {/* Checkbox Cell */}
+                                  {(userRole === 'admin' || userRole === 'librarian') && (
+                                      <td className="px-6 py-3">
+                                          <input 
+                                              type="checkbox" 
+                                              checked={selectedBookIds.includes(book.id)}
+                                              onChange={() => handleSelectBook(book.id)}
+                                              className="w-4 h-4 text-brand-600 rounded border-gray-300 focus:ring-brand-500 cursor-pointer"
+                                          />
+                                      </td>
+                                  )}
                                   <td className="px-6 py-3">
                                       <img src={book.coverUrl} alt="" className="w-10 h-14 object-cover rounded shadow-sm border border-gray-200 dark:border-gray-600" />
                                   </td>
@@ -323,10 +492,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                               <Edit size={16} />
                                           </button>
                                           
-                                          {/* Only Admin can delete */}
-                                          {userRole === 'admin' && (
+                                          {/* Admin and Librarian can delete */}
+                                          {(userRole === 'admin' || userRole === 'librarian') && (
                                               <button 
-                                                  onClick={() => handleDelete(book.id)}
+                                                  onClick={() => handleDeleteClick(book)}
                                                   className="p-1.5 text-red-600 hover:bg-red-50 rounded"
                                               >
                                                   <Trash2 size={16} />
@@ -338,7 +507,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           ))
                       ) : (
                           <tr>
-                              <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                              <td colSpan={userRole === 'admin' || userRole === 'librarian' ? 7 : 6} className="px-6 py-8 text-center text-gray-500">
                                   Không tìm thấy sách nào phù hợp.
                               </td>
                           </tr>
@@ -346,10 +515,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tbody>
               </table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Hiển thị <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> đến <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredBooks.length)}</span> trong số <span className="font-medium">{filteredBooks.length}</span> sách
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-300"
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                        <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                                currentPage === page
+                                    ? 'bg-brand-600 text-white'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            {page}
+                        </button>
+                    ))}
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="p-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-300"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+                </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Add Book Modal */}
+      {/* Add/Edit Book Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleCloseModal}></div>
@@ -422,6 +629,74 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+      )}
+
+      {/* Single Delete Confirmation Modal */}
+      {bookToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setBookToDelete(null)}></div>
+            <div className="relative bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 animate-fade-in">
+                <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center mb-4">
+                        <AlertCircle size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                        Xóa sách?
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                        Bạn có chắc chắn muốn xóa sách <span className="font-bold text-gray-800 dark:text-white">"{bookToDelete.title}"</span> không? Hành động này không thể hoàn tác.
+                    </p>
+                    <div className="flex gap-3 w-full">
+                        <button 
+                            onClick={() => setBookToDelete(null)}
+                            className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+                        >
+                            Hủy
+                        </button>
+                        <button 
+                            onClick={confirmDelete}
+                            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm"
+                        >
+                            Xóa ngay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowBulkDeleteModal(false)}></div>
+            <div className="relative bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm shadow-2xl p-6 animate-fade-in">
+                <div className="flex flex-col items-center text-center">
+                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-full flex items-center justify-center mb-4">
+                        <AlertCircle size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+                        Xóa {selectedBookIds.length} sách?
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                        Bạn có chắc chắn muốn xóa <span className="font-bold text-gray-800 dark:text-white">{selectedBookIds.length}</span> sách đã chọn không? Hành động này không thể hoàn tác.
+                    </p>
+                    <div className="flex gap-3 w-full">
+                        <button 
+                            onClick={() => setShowBulkDeleteModal(false)}
+                            className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-200"
+                        >
+                            Hủy
+                        </button>
+                        <button 
+                            onClick={confirmBulkDelete}
+                            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm"
+                        >
+                            Xóa tất cả
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
       )}
