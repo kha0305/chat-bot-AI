@@ -2,7 +2,7 @@
 
 Hệ thống Chatbot hỗ trợ thư viện thông minh, tích hợp AI để tư vấn sách, tra cứu thông tin và quản lý mượn trả sách.
 
-![Project Screenshot](https://via.placeholder.com/800x400?text=DTU+Library+Chatbot+Preview)
+![Project Screenshot](project-screenshot.png)
 
 ## 🚀 Tính Năng Chính
 
