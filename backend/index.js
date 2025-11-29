@@ -36,16 +36,23 @@ app.post('/api/register', require('./api/register'));
 const chatbotController = require('./controllers/ChatbotController');
 app.post('/api/chat-with-ai', chatbotController.processMessage);
 app.get('/api/chat-history/:userId', (req, res) => {
-    const chatStore = require('./data/ChatStore');
-    const { userId } = req.params;
-    const history = chatStore.getMessages(userId);
-    res.json(history);
+    // Warning: This uses in-memory store, not persistent in Vercel
+    // TODO: Migrate to MySQL
+    try {
+        const chatStore = require('./data/ChatStore');
+        const { userId } = req.params;
+        const history = chatStore.getMessages(userId);
+        res.json(history);
+    } catch (e) {
+        console.error("ChatStore error", e);
+        res.json([]);
+    }
 });
 
 // Admin Chat Routes
 const adminChatController = require('./controllers/AdminChatController');
 app.get('/api/admin/chat-sessions', adminChatController.getSessions);
-app.get('/api/admin/chat-messages/:userId', adminChatController.getMessages);
+app.get('/api/admin/chat-messages/:userId', adminChatController.getSessionMessages); // Fixed method name
 app.post('/api/admin/reply/:userId', adminChatController.sendAdminMessage);
 
 // Export for Vercel
