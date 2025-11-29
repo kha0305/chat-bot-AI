@@ -21,6 +21,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 1. Table: nguoi_dung (Users)
 CREATE TABLE nguoi_dung (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ten_dang_nhap VARCHAR(50) UNIQUE NOT NULL, -- Added username
     ho_ten VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     so_dien_thoai VARCHAR(20),

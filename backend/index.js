@@ -11,7 +11,8 @@ app.use(cors({
     'https://server.id.vn', 
     'https://www.server.id.vn',
     'http://localhost:5173', // Allow local dev
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://localhost:9000'  // Allow port 9000
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -20,6 +21,10 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' })); // Increase limit for image uploads
 
 // Routes
+app.get('/', (req, res) => {
+    res.send('Backend is running!');
+});
+
 app.get('/api/books', require('./api/getBooks'));
 app.post('/api/books', require('./api/addBook'));
 app.put('/api/books/:id', require('./api/updateBook'));
@@ -52,7 +57,7 @@ app.get('/api/chat-history/:userId', (req, res) => {
 // Admin Chat Routes
 const adminChatController = require('./controllers/AdminChatController');
 app.get('/api/admin/chat-sessions', adminChatController.getSessions);
-app.get('/api/admin/chat-messages/:userId', adminChatController.getSessionMessages); // Fixed method name
+app.get('/api/admin/chat-messages/:userId', adminChatController.getSessionMessages);
 app.post('/api/admin/reply/:userId', adminChatController.sendAdminMessage);
 
 // Export for Vercel

@@ -5,7 +5,6 @@ module.exports = async (req, res) => {
     const { username, password } = req.body;
 
     // 1. Check Hardcoded Admin/Librarian FIRST (Emergency Login)
-    // This ensures you can login even if Database is down
     if (username === 'admin' && password === 'admin') {
         return res.json({ id: 'admin', name: 'Quản Trị Viên', role: 'admin' });
     }
@@ -15,9 +14,10 @@ module.exports = async (req, res) => {
 
     // 2. Check Database for Users
     try {
+        // Updated query to check 'ten_dang_nhap' OR 'email' OR 'so_dien_thoai'
         const [rows] = await db.execute(
-          'SELECT * FROM nguoi_dung WHERE email = ? OR so_dien_thoai = ?', 
-          [username, username]
+          'SELECT * FROM nguoi_dung WHERE ten_dang_nhap = ? OR email = ? OR so_dien_thoai = ?', 
+          [username, username, username]
         );
 
         const user = rows[0];
@@ -35,12 +35,11 @@ module.exports = async (req, res) => {
           id: user.id.toString(),
           name: user.ho_ten,
           role: user.vai_tro,
-          email: user.email
+          email: user.email,
+          username: user.ten_dang_nhap
         });
     } catch (dbError) {
         console.error("Database Error during login:", dbError);
-        // If DB fails, we already checked hardcoded users above.
-        // So just return error for normal users.
         return res.status(500).json({ error: 'Database connection failed' });
     }
 

@@ -1,12 +1,7 @@
--- Script to seed default Admin and Librarian accounts
--- Run this in DBeaver connected to your Aiven MySQL database
+-- Seed Users (Admin & Librarian)
+-- Passwords are plain text for demo purposes. In production, use bcrypt hashes.
 
-INSERT INTO nguoi_dung (ho_ten, email, so_dien_thoai, mat_khau_hash, vai_tro, trang_thai)
+INSERT INTO nguoi_dung (ten_dang_nhap, ho_ten, email, so_dien_thoai, mat_khau_hash, vai_tro, trang_thai)
 VALUES 
--- Admin Account
--- Username to login: 'admin' (matches so_dien_thoai) or 'admin@dtu.edu.vn'
-('Quản Trị Viên', 'admin@dtu.edu.vn', 'admin', 'admin', 'admin', 'active'),
-
--- Librarian Account
--- Username to login: 'librarian' (matches so_dien_thoai) or 'librarian@dtu.edu.vn'
-('Nhân Viên Thư Viện', 'librarian@dtu.edu.vn', 'librarian', 'librarian', 'librarian', 'active');
+('admin', 'Quản Trị Viên', 'admin@library.dtu.edu.vn', '0901234567', 'admin', 'admin', 'active'),
+('librarian', 'Thủ Thư', 'librarian@library.dtu.edu.vn', '0909876543', 'librarian', 'librarian', 'active');
