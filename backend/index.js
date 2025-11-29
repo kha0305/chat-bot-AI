@@ -17,6 +17,10 @@ app.delete('/api/books/:id', require('./api/deleteBook'));
 app.get('/api/loans', require('./api/getLoans'));
 app.post('/api/loans', require('./api/addLoan'));
 
+// Auth Routes
+app.post('/api/login', require('./api/login'));
+app.post('/api/register', require('./api/register'));
+
 // Chat Route
 const chatbotController = require('./controllers/ChatbotController');
 app.post('/api/chat-with-ai', chatbotController.processMessage);

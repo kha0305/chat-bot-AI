@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { User, Lock, ArrowRight, UserPlus, Mail, CheckCircle, AlertCircle, CreditCard, Eye, EyeOff } from 'lucide-react';
 import { UserRole } from '../types';
+import { loginUser, registerUser } from '../services/api';
 
 interface LoginProps {
   onLogin: (role: UserRole, name: string) => void;
@@ -29,37 +30,22 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [showRegConfirmPassword, setShowRegConfirmPassword] = useState(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setNotification(null);
     setIsLoading(true);
 
-    // Simulate API delay
-    setTimeout(() => {
-      // Check hardcoded admin account
-      if (username === 'admin' && password === 'admin') {
-        onLogin('admin', 'Quản Trị Viên');
-      }
-      // Check hardcoded librarian account
-      else if (username === 'librarian' && password === 'librarian') {
-        onLogin('librarian', 'Nhân viên Thư viện');
-      } 
-      // Check hardcoded student account
-      else if (username === 'student' && password === 'student') {
-        onLogin('student', 'Nguyễn Văn A');
-      } 
-      // Check for the newly registered account (Mock logic for demo)
-      else if (regUsername && username === regUsername && password === regPassword) {
-        onLogin('student', regName || 'Sinh viên mới');
-      }
-      else {
+    try {
+        const user = await loginUser(username, password);
+        onLogin(user.role, user.name);
+    } catch (error) {
         setNotification({ type: 'error', message: 'Tên đăng nhập hoặc mật khẩu không đúng' });
+    } finally {
         setIsLoading(false);
-      }
-    }, 800);
+    }
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setNotification(null);
 
@@ -76,17 +62,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     setIsLoading(true);
 
-    // Simulate Registration API
-    setTimeout(() => {
-      setIsLoading(false);
-      setNotification({ type: 'success', message: 'Đăng ký thành công! Vui lòng đăng nhập.' });
-      setIsRegistering(false);
-      // Pre-fill login with new username
-      setUsername(regUsername);
-      setPassword('');
-      // Note: We deliberately do NOT clear regUsername/regPassword here 
-      // so we can use them to validate the mock login in handleLoginSubmit
-    }, 1000);
+    try {
+        await registerUser({
+            name: regName,
+            studentId: regStudentId,
+            username: regUsername,
+            password: regPassword
+        });
+        
+        setNotification({ type: 'success', message: 'Đăng ký thành công! Vui lòng đăng nhập.' });
+        setIsRegistering(false);
+        setUsername(regUsername);
+        setPassword('');
+    } catch (error) {
+        setNotification({ type: 'error', message: 'Đăng ký thất bại. Tên đăng nhập có thể đã tồn tại.' });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const toggleMode = () => {

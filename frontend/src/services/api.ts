@@ -67,6 +67,27 @@ export const sendMessage = async (message: string, userId?: string, userName?: s
   return response.json();
 };
 
+// Auth Functions
+export const loginUser = async (username: string, password: string):Promise<any> => {
+    const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+    if (!response.ok) throw new Error('Login failed');
+    return response.json();
+};
+
+export const registerUser = async (data: any):Promise<any> => {
+    const response = await fetch(`${API_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error('Registration failed');
+    return response.json();
+};
+
 // Admin Chat Functions
 export const fetchChatSessions = async () => {
   const response = await fetch(`${API_URL}/admin/chat-sessions`);
