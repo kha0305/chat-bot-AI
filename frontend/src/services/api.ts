@@ -1,7 +1,15 @@
 import { Book, LoanRecord, ChatMessage } from '../types';
 
 // Automatically use relative path '/api' in production (Vercel), or localhost for dev
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
+let API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
+
+// Fix common configuration errors:
+// 1. If user set VITE_API_URL to "https://api.server.id.vn", append "/api"
+if (API_URL.startsWith('http') && !API_URL.includes('/api')) {
+    API_URL = API_URL.replace(/\/$/, '') + '/api';
+}
+// 2. Remove trailing slash to prevent double slashes (e.g. ".../api/" -> ".../api")
+API_URL = API_URL.replace(/\/$/, '');
 
 export const fetchBooks = async (): Promise<Book[]> => {
   const response = await fetch(`${API_URL}/books`);
