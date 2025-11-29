@@ -5,7 +5,18 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Configure CORS to allow requests from your frontend domain
+app.use(cors({
+  origin: [
+    'https://server.id.vn', 
+    'https://www.server.id.vn',
+    'http://localhost:5173', // Allow local dev
+    'http://localhost:3000'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json({ limit: '50mb' })); // Increase limit for image uploads
 
 // Routes
