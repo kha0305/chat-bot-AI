@@ -1,19 +1,22 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Create the connection pool. The pool-specific settings are the defaults
-const pool = mysql.createPool({
-  uri: process.env.DATABASE_URL, // Aiven MySQL Connection URI
+// Parse the connection string or use individual params
+// Aiven URI format: mysql://user:password@host:port/db?ssl-mode=REQUIRED
+const dbConfig = {
+  uri: process.env.DATABASE_URL, 
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
   ssl: {
-    rejectUnauthorized: true,
-    ca: process.env.CA_CERT, // Optional: Aiven CA Cert if needed, usually Aiven requires SSL
+    // For Aiven, we often need to allow self-signed or unknown CAs if we don't provide the CA cert explicitly
+    rejectUnauthorized: false 
   }
-});
+};
 
-// Test connection
+const pool = mysql.createPool(dbConfig);
+
+// Test connection on startup
 pool.getConnection()
     .then(conn => {
         console.log("Successfully connected to Aiven MySQL database!");
