@@ -1,6 +1,7 @@
 import { Book, LoanRecord, ChatMessage } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Automatically use relative path '/api' in production (Vercel), or localhost for dev
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
 
 export const fetchBooks = async (): Promise<Book[]> => {
   const response = await fetch(`${API_URL}/books`);
