@@ -1,29 +1,27 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Parse the connection string or use individual params
-// Aiven URI format: mysql://user:password@host:port/db?ssl-mode=REQUIRED
-const dbConfig = {
-  uri: process.env.DATABASE_URL, 
+// Cấu hình kết nối Local MySQL (XAMPP/WAMP/MAMP)
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '', // Mặc định XAMPP là rỗng
+  database: process.env.DB_NAME || 'library_db',
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  ssl: {
-    // For Aiven, we often need to allow self-signed or unknown CAs if we don't provide the CA cert explicitly
-    rejectUnauthorized: false 
-  }
-};
+  queueLimit: 0
+});
 
-const pool = mysql.createPool(dbConfig);
-
-// Test connection on startup
+// Test connection
 pool.getConnection()
     .then(conn => {
-        console.log("Successfully connected to Aiven MySQL database!");
+        console.log("✅ Successfully connected to Local MySQL Database!");
         conn.release();
     })
     .catch(err => {
-        console.error("Failed to connect to database:", err.message);
+        console.error("❌ Failed to connect to database:", err.message);
+        console.error("👉 Please check if XAMPP/MySQL is running and database 'library_db' exists.");
     });
 
 module.exports = pool;
