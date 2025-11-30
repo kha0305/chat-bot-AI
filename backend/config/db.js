@@ -5,7 +5,7 @@ require('dotenv').config();
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '', // Mặc định XAMPP là rỗng
+  password: process.env.DB_PASSWORD || 'Nguyen@1904', // Mặc định XAMPP là rỗng
   database: process.env.DB_NAME || 'library_db',
   port: process.env.DB_PORT || 3306,
   waitForConnections: true,

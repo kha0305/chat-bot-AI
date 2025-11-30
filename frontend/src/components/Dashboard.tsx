@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { BookOpen, Users, Activity, ArrowRight, Book as BookIcon, Clock, Search, RotateCcw, FileQuestion, BookPlus, CalendarCheck, Info, Star, CheckCircle, AlertTriangle, Camera } from 'lucide-react';
-import { Book } from '../types';
+import { Book, ViewState } from '../types';
 
 interface DashboardProps {
   onNavigateToChat: (message?: string) => void;
@@ -8,9 +8,10 @@ interface DashboardProps {
   setBooks: React.Dispatch<React.SetStateAction<Book[]>>;
   onOpenBorrow: (book: Book) => void;
   onUpdateBook?: (id: string, book: Partial<Book>) => Promise<Book>;
+  onViewChange: (view: ViewState) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks, onOpenBorrow, onUpdateBook }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks, onOpenBorrow, onUpdateBook, onViewChange }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentBookId, setCurrentBookId] = useState<string | null>(null);
 
@@ -19,38 +20,38 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
   const availableBooks = books.filter(b => b.status === 'Available').length;
   const borrowedBooks = books.filter(b => b.status === 'Borrowed').length;
   const maintenanceBooks = books.filter(b => b.status === 'Maintenance').length;
-  
+
   // Get categories
   const categories = Array.from(new Set(books.map(b => b.category)));
 
   const quickMenu = [
-    { 
-      icon: <Search size={24} />, 
-      label: "Tra cứu nhanh", 
+    {
+      icon: <Search size={24} />,
+      label: "Tra cứu nhanh",
       desc: "Tìm sách, tài liệu",
-      action: "Tôi muốn tìm sách", 
-      color: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900 hover:border-blue-300 dark:hover:border-blue-700" 
+      action: "Tôi muốn tìm sách",
+      color: "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900 hover:border-blue-300 dark:hover:border-blue-700"
     },
-    { 
-      icon: <RotateCcw size={24} />, 
-      label: "Gia hạn sách", 
+    {
+      icon: <RotateCcw size={24} />,
+      label: "Gia hạn sách",
       desc: "Thủ tục & Hướng dẫn",
-      action: "Hướng dẫn gia hạn sách online", 
-      color: "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-100 dark:border-green-900 hover:border-green-300 dark:hover:border-green-700" 
+      action: "Hướng dẫn gia hạn sách online",
+      color: "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-100 dark:border-green-900 hover:border-green-300 dark:hover:border-green-700"
     },
-    { 
-      icon: <BookPlus size={24} />, 
-      label: "Đề xuất mua", 
+    {
+      icon: <BookPlus size={24} />,
+      label: "Đề xuất mua",
       desc: "Yêu cầu sách mới",
-      action: "Tôi muốn đề xuất thư viện mua thêm sách", 
-      color: "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900 hover:border-purple-300 dark:hover:border-purple-700" 
+      action: "Tôi muốn đề xuất thư viện mua thêm sách",
+      color: "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900 hover:border-purple-300 dark:hover:border-purple-700"
     },
-    { 
-      icon: <FileQuestion size={24} />, 
-      label: "Hỏi đáp & Nội quy", 
+    {
+      icon: <FileQuestion size={24} />,
+      label: "Hỏi đáp & Nội quy",
       desc: "Quy định thư viện",
-      action: "Nội quy thư viện là gì?", 
-      color: "bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-900 hover:border-orange-300 dark:hover:border-orange-700" 
+      action: "Nội quy thư viện là gì?",
+      color: "bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-900 hover:border-orange-300 dark:hover:border-orange-700"
     },
   ];
 
@@ -104,16 +105,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
       const reader = new FileReader();
       reader.onloadend = () => {
         const newUrl = reader.result as string;
-        
+
         if (onUpdateBook) {
-            onUpdateBook(currentBookId, { coverUrl: newUrl });
+          onUpdateBook(currentBookId, { coverUrl: newUrl });
         } else {
-            // Update state passed from parent
-            setBooks(prev => prev.map(b => 
-            b.id === currentBookId 
-                ? { ...b, coverUrl: newUrl }
-                : b
-            ));
+          // Update state passed from parent
+          setBooks(prev => prev.map(b =>
+            b.id === currentBookId
+              ? { ...b, coverUrl: newUrl }
+              : b
+          ));
         }
 
         setCurrentBookId(null);
@@ -148,7 +149,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
         }
       `}</style>
 
-      <input 
+      <input
         type="file"
         ref={fileInputRef}
         className="hidden"
@@ -164,7 +165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
           <p className="text-brand-100 max-w-2xl text-lg mb-6">
             Chào mừng bạn đến với Thư viện số Đại học Duy Tân. Tra cứu tài liệu, kiểm tra trạng thái sách và hỏi đáp với AI LibBot ngay hôm nay.
           </p>
-          <button 
+          <button
             onClick={() => onNavigateToChat()}
             className="bg-white dark:bg-gray-800 text-brand-700 dark:text-brand-400 px-6 py-3 rounded-xl font-semibold hover:bg-brand-50 dark:hover:bg-gray-700 transition-colors shadow-md flex items-center gap-2"
           >
@@ -214,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
                   {Math.round((stat.count / stat.total) * 100)}%
                 </span>
               </div>
-              
+
               <div className="mb-3">
                 <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-0.5">{stat.label}</h3>
                 <div className="flex items-baseline gap-1">
@@ -222,11 +223,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
                   <span className="text-xs text-gray-400 font-medium">/ {stat.total} cuốn</span>
                 </div>
               </div>
-              
+
               {/* Progress Bar */}
               <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full ${stat.barColor} transition-all duration-700 ease-out group-hover:opacity-80`} 
+                <div
+                  className={`h-full rounded-full ${stat.barColor} transition-all duration-700 ease-out group-hover:opacity-80`}
                   style={{ width: `${(stat.count / stat.total) * 100}%` }}
                 />
               </div>
@@ -276,8 +277,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
               <BookIcon size={24} className="text-brand-600 dark:text-brand-500" />
               Sách Nổi Bật
             </h2>
-            <button 
-              onClick={() => onNavigateToChat("Liệt kê các sách nổi bật hiện nay")}
+            <button
+              onClick={() => onViewChange('introduction')}
               className="text-sm text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 font-medium"
             >
               Xem tất cả <ArrowRight size={16} />
@@ -287,22 +288,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
           {/* Scroll Container */}
           <div className="flex overflow-x-auto gap-6 pb-4 pt-2 snap-x snap-mandatory custom-scrollbar -mx-2 px-2">
             {books.map((book: Book) => (
-              <div 
-                key={book.id} 
+              <div
+                key={book.id}
                 className="min-w-[260px] w-[260px] flex-none snap-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden group"
               >
                 {/* Large Cover Image */}
-                <div 
+                <div
                   className="relative h-[360px] overflow-hidden cursor-pointer group/image"
                   onClick={() => onNavigateToChat(`Thông tin về sách "${book.title}"`)}
                 >
-                  <img 
-                    src={book.coverUrl} 
-                    alt={book.title} 
+                  <img
+                    src={book.coverUrl}
+                    alt={book.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-50 group-hover:opacity-40 transition-opacity" />
-                  
+
                   {/* Upload Button */}
                   <button
                     onClick={(e) => handleUploadClick(e, book.id)}
@@ -314,50 +315,49 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
 
                   {/* Status Badge */}
                   <div className="absolute top-3 right-3">
-                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm backdrop-blur-md ${
-                      book.status === 'Available' 
-                        ? 'bg-white/90 text-green-700 border border-green-200' 
-                        : 'bg-white/90 text-red-700 border border-red-200'
-                    }`}>
+                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-sm backdrop-blur-md ${book.status === 'Available'
+                      ? 'bg-white/90 text-green-700 border border-green-200'
+                      : 'bg-white/90 text-red-700 border border-red-200'
+                      }`}>
                       {book.status === 'Available' ? 'Có sẵn' : 'Đã mượn'}
                     </span>
                   </div>
-                  
+
                   {/* Hover Overlay with Info Icon */}
                   <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover/image:opacity-100 pointer-events-none">
-                     <div className="bg-white/90 p-3 rounded-full shadow-lg transform scale-90 group-hover/image:scale-100 transition-transform">
-                        <Info size={24} className="text-brand-600" />
-                     </div>
+                    <div className="bg-white/90 p-3 rounded-full shadow-lg transform scale-90 group-hover/image:scale-100 transition-transform">
+                      <Info size={24} className="text-brand-600" />
+                    </div>
                   </div>
                 </div>
 
                 {/* Content */}
                 <div className="p-5 flex flex-col flex-1 relative">
-                  <div 
+                  <div
                     className="cursor-pointer mb-4"
                     onClick={() => onNavigateToChat(`Thông tin về sách "${book.title}"`)}
                   >
                     <h3 className="font-bold text-xl text-gray-900 dark:text-white line-clamp-1 mb-1" title={book.title}>{book.title}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{book.author}</p>
-                    
+
                     <div className="flex items-center gap-2">
-                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded border border-brand-100 dark:border-brand-800">
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 px-2 py-1 rounded border border-brand-100 dark:border-brand-800">
                         {book.category}
-                        </span>
-                        <div className="flex text-yellow-400 gap-0.5">
-                            <Star size={12} fill="currentColor" />
-                            <Star size={12} fill="currentColor" />
-                            <Star size={12} fill="currentColor" />
-                            <Star size={12} fill="currentColor" />
-                            <Star size={12} fill="currentColor" />
-                        </div>
+                      </span>
+                      <div className="flex text-yellow-400 gap-0.5">
+                        <Star size={12} fill="currentColor" />
+                        <Star size={12} fill="currentColor" />
+                        <Star size={12} fill="currentColor" />
+                        <Star size={12} fill="currentColor" />
+                        <Star size={12} fill="currentColor" />
+                      </div>
                     </div>
                   </div>
 
                   {/* Prominent Action Button */}
                   <div className="mt-auto pt-2">
                     {book.status === 'Available' ? (
-                      <button 
+                      <button
                         onClick={(e) => handleBorrowClick(e, book)}
                         className="w-full flex items-center justify-center gap-2 bg-brand-700 text-white text-sm font-bold uppercase tracking-wide py-3.5 rounded-xl hover:bg-brand-800 active:scale-[0.98] shadow-md hover:shadow-brand-500/30 transition-all"
                       >
@@ -365,7 +365,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
                         MƯỢN SÁCH NGAY
                       </button>
                     ) : (
-                      <button 
+                      <button
                         disabled
                         className="w-full flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-sm font-bold uppercase tracking-wide py-3.5 rounded-xl cursor-not-allowed border border-gray-200 dark:border-gray-600"
                       >
@@ -377,36 +377,36 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
                 </div>
               </div>
             ))}
-            
+
             {/* "See More" Card */}
             <div className="min-w-[100px] flex items-center justify-center snap-center">
-               <button 
-                 onClick={() => onNavigateToChat("Xem danh sách đầy đủ các sách")}
-                 className="w-14 h-14 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-200 flex items-center justify-center transition-all shadow-sm hover:shadow-md hover:scale-110"
-               >
-                 <ArrowRight size={28} />
-               </button>
+              <button
+                onClick={() => onViewChange('introduction')}
+                className="w-14 h-14 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 hover:text-brand-600 dark:hover:text-brand-400 hover:border-brand-200 flex items-center justify-center transition-all shadow-sm hover:shadow-md hover:scale-110"
+              >
+                <ArrowRight size={28} />
+              </button>
             </div>
           </div>
         </div>
 
         {/* Quick Info & Categories (Right Column) */}
         <div className="space-y-6 lg:mt-12">
-          
+
           {/* Library Hours */}
           <div className="bg-brand-50 dark:bg-brand-900/20 rounded-2xl p-6 border border-brand-100 dark:border-brand-900">
             <h3 className="font-bold text-brand-800 dark:text-brand-300 mb-4 flex items-center gap-2">
               <Clock size={18} /> Giờ mở cửa
             </h3>
             <div className="space-y-3 text-sm">
-               <div className="flex justify-between items-start pb-2 border-b border-brand-200/50 dark:border-brand-800/50">
-                 <span className="text-brand-700 dark:text-brand-400 font-medium">Thứ 2 - Thứ 6</span>
-                 <span className="text-brand-900 dark:text-brand-200">7:00 - 21:00</span>
-               </div>
-               <div className="flex justify-between items-start">
-                 <span className="text-brand-700 dark:text-brand-400 font-medium">Thứ 7 - CN</span>
-                 <span className="text-brand-900 dark:text-brand-200">8:00 - 17:00</span>
-               </div>
+              <div className="flex justify-between items-start pb-2 border-b border-brand-200/50 dark:border-brand-800/50">
+                <span className="text-brand-700 dark:text-brand-400 font-medium">Thứ 2 - Thứ 6</span>
+                <span className="text-brand-900 dark:text-brand-200">7:00 - 21:00</span>
+              </div>
+              <div className="flex justify-between items-start">
+                <span className="text-brand-700 dark:text-brand-400 font-medium">Thứ 7 - CN</span>
+                <span className="text-brand-900 dark:text-brand-200">8:00 - 17:00</span>
+              </div>
             </div>
           </div>
 
@@ -415,7 +415,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
             <h3 className="font-bold text-gray-800 dark:text-white mb-4">Danh mục phổ biến</h3>
             <div className="flex flex-wrap gap-2">
               {categories.map((cat, idx) => (
-                <button 
+                <button
                   key={idx}
                   onClick={() => onNavigateToChat(`Tìm sách thuộc thể loại ${cat}`)}
                   className="text-xs px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-gray-600 hover:border-brand-200 hover:text-brand-700 dark:hover:text-white transition-all"
@@ -423,7 +423,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigateToChat, books, setBooks
                   {cat}
                 </button>
               ))}
-              <button 
+              <button
                 onClick={() => onNavigateToChat("Danh sách các thể loại sách")}
                 className="text-xs px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-transparent rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >

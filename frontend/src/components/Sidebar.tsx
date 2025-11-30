@@ -1,5 +1,20 @@
 import React from 'react';
-import { LayoutDashboard, MessageSquare, BookMarked, HelpCircle, LogOut, Settings, BookOpen, Users, User } from 'lucide-react';
+import {
+  LayoutDashboard,
+  MessageSquare,
+  BookMarked,
+  HelpCircle,
+  LogOut,
+  Settings,
+  BookOpen,
+  User,
+  Info,
+  Bell,
+  FileText,
+  Cpu,
+  Activity,
+  LogIn
+} from 'lucide-react';
 import { ViewState, UserRole } from '../types';
 
 interface SidebarProps {
@@ -10,13 +25,28 @@ interface SidebarProps {
   onOpenSettings?: () => void;
   onOpenHelp?: () => void;
   onOpenProfile?: () => void;
-  userRole: UserRole;
-  userName: string;
+  onOpenErrorReport?: () => void;
+  userRole?: UserRole;
+  userName?: string;
   onLogout: () => void;
+  onLogin?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewChange, onOpenSettings, onOpenHelp, onOpenProfile, userRole, userName, onLogout }) => {
-  
+const Sidebar: React.FC<SidebarProps> = ({
+  isOpen,
+  onClose,
+  currentView,
+  onViewChange,
+  onOpenSettings,
+  onOpenHelp,
+  onOpenProfile,
+  onOpenErrorReport,
+  userRole,
+  userName,
+  onLogout,
+  onLogin
+}) => {
+
   const handleNavigation = (view: ViewState) => {
     onViewChange(view);
     if (window.innerWidth < 1024) {
@@ -26,27 +56,46 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
 
   const getMainMenuItems = () => {
     if (userRole === 'admin' || userRole === 'librarian') {
-      return [
+      const adminItems = [
         { id: 'admin-dashboard' as ViewState, label: userRole === 'admin' ? 'Tổng quan Admin' : 'Tổng quan Thư viện', icon: LayoutDashboard },
         { id: 'admin-books' as ViewState, label: 'Quản lý sách', icon: BookOpen },
         { id: 'admin-chat' as ViewState, label: 'Hỗ trợ trực tuyến', icon: MessageSquare },
+        { id: 'admin-faq' as ViewState, label: 'Quản lý FAQ', icon: FileText },
+      ];
+
+      if (userRole === 'admin') {
+        adminItems.push(
+          { id: 'admin-ai-training' as ViewState, label: 'Huấn luyện AI', icon: Cpu },
+          { id: 'admin-logs' as ViewState, label: 'Log hệ thống', icon: Activity }
+        );
+      }
+
+      return [
+        ...adminItems,
+        { id: 'introduction' as ViewState, label: 'Giới thiệu', icon: Info },
+        { id: 'notification' as ViewState, label: 'Thông báo', icon: Bell },
       ];
     }
+
+    // Guest/Student Menu
     return [
       { id: 'dashboard' as ViewState, label: 'Tổng quan (Dashboard)', icon: LayoutDashboard },
+      { id: 'introduction' as ViewState, label: 'Giới thiệu', icon: Info },
+      { id: 'notification' as ViewState, label: 'Thông báo', icon: Bell },
       { id: 'chat' as ViewState, label: 'Trợ lý ảo LibBot', icon: MessageSquare },
     ];
   };
 
   const getPersonalMenuItems = () => {
-    if (userRole === 'admin' || userRole === 'librarian') {
+    if (!userRole || userRole === 'student') {
+      // Guests/Students don't have personal items that require login in this context, 
+      // or we can show them but they might prompt login.
+      // For now, let's keep 'Lịch sử mượn sách' but it might be empty or prompt login.
       return [
-        // Admin specific personal items if any, currently simple
+        { id: 'history' as ViewState, label: 'Lịch sử mượn sách', icon: BookMarked },
       ];
     }
-    return [
-      { id: 'history' as ViewState, label: 'Lịch sử mượn sách', icon: BookMarked, badge: '2' },
-    ];
+    return [];
   };
 
   const mainMenuItems = getMainMenuItems();
@@ -55,24 +104,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
   return (
     <>
       {/* Overlay for mobile */}
-      <div 
-        className={`fixed inset-0 bg-black/50 z-30 lg:hidden transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+      <div
+        className={`fixed inset-0 bg-black/50 z-30 lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={onClose}
       />
 
       {/* Sidebar Content */}
-      <div className={`fixed top-0 left-0 h-full w-[280px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 z-40 transform transition-transform duration-300 lg:translate-x-0 flex flex-col ${
-        isOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        
+      <div className={`fixed top-0 left-0 h-full w-[280px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 z-40 transform transition-transform duration-300 lg:translate-x-0 flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+
         {/* Header */}
-          
+
         <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 transition-colors">
-          <img 
-            src="/dtu-icon.png" 
-            alt="DTU Logo" 
+          <img
+            src="/dtu-icon.png"
+            alt="DTU Logo"
             className="h-10 w-auto mr-3 object-contain"
           />
           <div className="flex flex-col justify-center">
@@ -80,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
               DTU Library
             </h1>
             <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest mt-1">
-              CỔNG {userRole === 'admin' ? 'QUẢN TRỊ' : userRole === 'librarian' ? 'THỦ THƯ' : 'SINH VIÊN'}
+              {userRole === 'admin' ? 'CỔNG QUẢN TRỊ' : userRole === 'librarian' ? 'CỔNG THỦ THƯ' : 'CỔNG SINH VIÊN'}
             </span>
           </div>
         </div>
@@ -88,16 +135,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
         {/* Navigation Menu */}
         <div className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
           <div className="px-3 mb-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Menu Chính</div>
-          
+
           {mainMenuItems.map((item) => (
-            <button 
+            <button
               key={item.id}
               onClick={() => handleNavigation(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                currentView === item.id 
-                  ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100 dark:bg-gray-800 dark:text-brand-400 dark:ring-gray-700' 
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${currentView === item.id
+                ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100 dark:bg-gray-800 dark:text-brand-400 dark:ring-gray-700'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                }`}
             >
               <item.icon size={20} className={currentView === item.id ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400 dark:text-gray-500'} />
               {item.label}
@@ -108,32 +154,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
             <>
               <div className="px-3 mt-6 mb-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Cá nhân</div>
               {personalMenuItems.map((item) => (
-                <button 
+                <button
                   key={item.id}
                   onClick={() => handleNavigation(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    currentView === item.id 
-                      ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100 dark:bg-gray-800 dark:text-brand-400 dark:ring-gray-700' 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${currentView === item.id
+                    ? 'bg-brand-50 text-brand-700 shadow-sm ring-1 ring-brand-100 dark:bg-gray-800 dark:text-brand-400 dark:ring-gray-700'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                    }`}
                 >
                   <item.icon size={20} className={currentView === item.id ? 'text-brand-600 dark:text-brand-400' : 'text-gray-400 dark:text-gray-500'} />
                   {item.label}
-                  {item.badge && (
-                    <span className={`ml-auto text-[10px] px-1.5 py-0.5 rounded-full ${
-                      currentView === item.id 
-                        ? 'bg-brand-200 text-brand-800 dark:bg-brand-900/50 dark:text-brand-300' 
-                        : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
-                    }`}>
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               ))}
             </>
           )}
 
-          <button 
+          <button
             onClick={onOpenHelp}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors mt-2"
           >
@@ -141,7 +177,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
             Trợ giúp & Hướng dẫn
           </button>
 
-          <button 
+          {onOpenErrorReport && (
+            <button
+              onClick={onOpenErrorReport}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              <Activity size={20} className="text-gray-400 dark:text-gray-500" />
+              Báo cáo lỗi
+            </button>
+          )}
+
+          <button
             onClick={onOpenSettings}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
@@ -152,34 +198,43 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onViewC
 
         {/* Footer User Profile */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 transition-colors">
-          <button 
-            onClick={onOpenProfile}
-            className="flex items-center gap-3 mb-3 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700/50 p-2 -ml-2 rounded-lg transition-colors group"
-          >
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border overflow-hidden ${
-              userRole === 'admin' 
-                ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400' 
-                : userRole === 'librarian'
-                ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
-                : 'bg-brand-100 text-brand-700 border-brand-200 dark:bg-brand-900/30 dark:text-brand-400'
-            }`}>
-              {/* Show avatar if available, else initial */}
-              <User size={20} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{userName}</p>
-              <p className="text-[10px] text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                Đang trực tuyến
-              </p>
-            </div>
-          </button>
-          <button 
-            onClick={onLogout}
-            className="w-full flex items-center justify-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors py-1"
-          >
-            <LogOut size={14} /> Đăng xuất
-          </button>
+          {userRole ? (
+            <>
+              <button
+                onClick={onOpenProfile}
+                className="flex items-center gap-3 mb-3 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700/50 p-2 -ml-2 rounded-lg transition-colors group"
+              >
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm border overflow-hidden ${userRole === 'admin'
+                  ? 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400'
+                  : userRole === 'librarian'
+                    ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400'
+                    : 'bg-brand-100 text-brand-700 border-brand-200 dark:bg-brand-900/30 dark:text-brand-400'
+                  }`}>
+                  <User size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{userName}</p>
+                  <p className="text-[10px] text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    Đang trực tuyến
+                  </p>
+                </div>
+              </button>
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center justify-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors py-1"
+              >
+                <LogOut size={14} /> Đăng xuất
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={onLogin}
+              className="w-full flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold py-2.5 transition-all shadow-sm"
+            >
+              <LogIn size={18} /> Đăng nhập
+            </button>
+          )}
         </div>
       </div>
     </>

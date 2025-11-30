@@ -69,13 +69,13 @@ const AdminChat: React.FC<AdminChatProps> = ({ adminName }) => {
 
     const text = inputText;
     setInputText('');
-    
+
     // Optimistic update
     const tempMsg = {
-        id: Date.now().toString(),
-        sender: 'admin',
-        text: text,
-        timestamp: new Date().toISOString()
+      id: Date.now().toString(),
+      sender: 'admin',
+      text: text,
+      timestamp: new Date().toISOString()
     };
     setMessages(prev => [...prev, tempMsg]);
 
@@ -100,27 +100,27 @@ const AdminChat: React.FC<AdminChatProps> = ({ adminName }) => {
           </h2>
           <div className="mt-3 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Tìm sinh viên..." 
+            <input
+              type="text"
+              placeholder="Tìm sinh viên..."
               className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto">
           {sessions.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 text-sm">
-              Chưa có cuộc trò chuyện nào.
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-gray-400">
+              <MessageSquare size={32} className="mb-3 opacity-50" />
+              <p className="text-sm">Chưa có cuộc hội thoại nào</p>
             </div>
           ) : (
             sessions.map(session => (
               <button
                 key={session.user.id}
                 onClick={() => setSelectedSessionId(session.user.id)}
-                className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left border-b border-gray-100 dark:border-gray-700/50 ${
-                  selectedSessionId === session.user.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                }`}
+                className={`w-full p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left border-b border-gray-100 dark:border-gray-700/50 ${selectedSessionId === session.user.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                  }`}
               >
                 <div className="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 font-bold shrink-0">
                   {session.user.name.charAt(0)}
@@ -131,7 +131,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ adminName }) => {
                       {session.user.name}
                     </h3>
                     <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
-                      {new Date(session.lastUpdated).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      {new Date(session.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
@@ -172,14 +172,13 @@ const AdminChat: React.FC<AdminChatProps> = ({ adminName }) => {
                 const isMe = msg.sender === 'admin' || msg.sender === 'librarian';
                 return (
                   <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm ${
-                      isMe 
-                        ? 'bg-brand-600 text-white rounded-br-none' 
+                    <div className={`max-w-[70%] rounded-2xl px-4 py-3 text-sm ${isMe
+                        ? 'bg-brand-600 text-white rounded-br-none'
                         : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm border border-gray-200 dark:border-gray-700 rounded-bl-none'
-                    }`}>
+                      }`}>
                       <p>{msg.text}</p>
                       <p className={`text-[10px] mt-1 text-right ${isMe ? 'text-brand-200' : 'text-gray-400'}`}>
-                        {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
@@ -198,7 +197,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ adminName }) => {
                   placeholder="Nhập tin nhắn..."
                   className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 border-none rounded-xl focus:ring-2 focus:ring-brand-500 outline-none"
                 />
-                <button 
+                <button
                   type="submit"
                   disabled={!inputText.trim()}
                   className="p-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
