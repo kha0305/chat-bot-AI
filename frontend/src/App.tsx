@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Trash2, MessageSquare, Settings as SettingsIcon } from 'lucide-react';
+import { Menu, Trash2, MessageSquare, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
 import ChatInput from './components/ChatInput';
 import MessageBubble from './components/MessageBubble';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AdminChat from './components/AdminChat';
+import SupportChat from './components/SupportChat';
 import Login from './components/Login';
 import LoanHistory from './components/LoanHistory';
 import SettingsModal from './components/SettingsModal';
@@ -167,9 +168,9 @@ const App: React.FC = () => {
     }
   }, [messages, currentView]);
 
-  const handleLogin = (role: UserRole, name: string) => {
+  const handleLogin = (role: UserRole, name: string, id: string) => {
     setUser({
-      id: Date.now().toString(),
+      id: id,
       name,
       role
     });
@@ -306,8 +307,9 @@ const App: React.FC = () => {
       case 'dashboard': return 'Tổng quan';
       case 'admin-dashboard': return user?.role === 'admin' ? 'Tổng quan Admin' : 'Tổng quan Thư viện';
       case 'admin-books': return 'Quản lý sách';
-      case 'admin-chat': return 'Hỗ trợ trực tuyến';
+      case 'admin-chat': return 'Hỗ trợ trực tuyến (Admin)';
       case 'chat': return 'DTU LibBot';
+      case 'support-chat': return 'Chat với nhân viên';
       case 'history': return 'Sổ tay thư viện';
       default: return 'DTU Library';
     }
@@ -397,12 +399,30 @@ const App: React.FC = () => {
 
           <div className="flex items-center gap-2">
             {currentView === 'chat' ? (
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setCurrentView('support-chat')}
+                        className="p-2 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                        title="Chat với nhân viên"
+                    >
+                        <UserIcon size={18} />
+                        <span className="hidden sm:inline">Gặp nhân viên</span>
+                    </button>
+                    <button 
+                        onClick={clearHistory}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Xóa lịch sử"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                </div>
+            ) : currentView === 'support-chat' ? (
                 <button 
-                    onClick={clearHistory}
-                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Xóa lịch sử"
+                    onClick={() => setCurrentView('chat')}
+                    className="p-2 text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-900/40 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
                 >
-                    <Trash2 size={18} />
+                    <MessageSquare size={18} />
+                    <span className="hidden sm:inline">Quay lại Bot</span>
                 </button>
             ) : user.role === 'student' ? (
                 <button 
@@ -453,7 +473,13 @@ const App: React.FC = () => {
 
             {currentView === 'admin-chat' && (
                 <div className="flex-1 p-6 overflow-hidden">
-                    <AdminChat adminName={user.name} />
+                    <AdminChat adminId={user.id} adminName={user.name} />
+                </div>
+            )}
+
+            {currentView === 'support-chat' && (
+                <div className="flex-1 overflow-hidden">
+                    <SupportChat user={user} />
                 </div>
             )}
 

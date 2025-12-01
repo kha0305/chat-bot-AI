@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS faq;
 DROP TABLE IF EXISTS danh_gia;
 DROP TABLE IF EXISTS lich_su_tra_cuu;
 DROP TABLE IF EXISTS phieu_muon;
+DROP TABLE IF EXISTS tin_nhan_ho_tro;
 DROP TABLE IF EXISTS ho_tro_truc_tuyen;
 DROP TABLE IF EXISTS sach;
 DROP TABLE IF EXISTS nguoi_dung;
@@ -142,10 +143,24 @@ CREATE TABLE phieu_muon (
 CREATE TABLE ho_tro_truc_tuyen (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     nguoi_dung_id BIGINT,
-    noi_dung TEXT,
+    nhan_vien_id BIGINT, -- Staff assigned to this ticket
+    noi_dung TEXT, -- Initial message
     trang_thai ENUM('cho_xu_ly', 'dang_xu_ly', 'da_xu_ly') DEFAULT 'cho_xu_ly',
     thoi_gian_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(id)
+    FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(id),
+    FOREIGN KEY (nhan_vien_id) REFERENCES nguoi_dung(id)
+);
+
+-- 13. Table: tin_nhan_ho_tro (Support Chat Messages)
+CREATE TABLE tin_nhan_ho_tro (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ho_tro_id BIGINT NOT NULL,
+    nguoi_gui_id BIGINT NOT NULL,
+    noi_dung TEXT NOT NULL,
+    thoi_gian TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    da_xem BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (ho_tro_id) REFERENCES ho_tro_truc_tuyen(id) ON DELETE CASCADE,
+    FOREIGN KEY (nguoi_gui_id) REFERENCES nguoi_dung(id)
 );
 
 -- SEED DATA

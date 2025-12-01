@@ -116,3 +116,37 @@ export const fetchUserChatHistory = async (userId: string) => {
     }
     return response.json();
 };
+
+// Support Chat Functions
+export const createSupportSession = async (userId: string, message: string) => {
+    const response = await fetch(`${API_URL}/support/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message })
+    });
+    return response.json();
+};
+
+export const fetchSupportSessions = async () => {
+    const response = await fetch(`${API_URL}/support/sessions`);
+    return response.json();
+};
+
+export const fetchSupportMessages = async (sessionId: string) => {
+    const response = await fetch(`${API_URL}/support/messages/${sessionId}`);
+    return response.json();
+};
+
+export const sendSupportMessage = async (sessionId: string, userId: string, message: string) => {
+    const response = await fetch(`${API_URL}/support/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, userId, message })
+    });
+    return response.json();
+};
+
+export const checkActiveSupportSession = async (userId: string) => {
+    const response = await fetch(`${API_URL}/support/active/${userId}`);
+    return response.json();
+};

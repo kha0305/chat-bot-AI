@@ -4,7 +4,7 @@ import { UserRole } from '../types';
 import { loginUser, registerUser } from '../services/api';
 
 interface LoginProps {
-  onLogin: (role: UserRole, name: string) => void;
+  onLogin: (role: UserRole, name: string, id: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -37,7 +37,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     try {
         const user = await loginUser(username, password);
-        onLogin(user.role, user.name);
+        onLogin(user.role, user.name, user.id);
     } catch (error) {
         setNotification({ type: 'error', message: 'Tên đăng nhập hoặc mật khẩu không đúng' });
     } finally {

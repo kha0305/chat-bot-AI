@@ -60,6 +60,14 @@ app.get('/api/admin/chat-sessions', adminChatController.getSessions);
 app.get('/api/admin/chat-messages/:userId', adminChatController.getSessionMessages);
 app.post('/api/admin/reply/:userId', adminChatController.sendAdminMessage);
 
+// Support Chat Routes (Real-time DB)
+const supportController = require('./controllers/SupportController');
+app.post('/api/support/create', supportController.createSession);
+app.get('/api/support/sessions', supportController.getSessions);
+app.get('/api/support/messages/:sessionId', supportController.getMessages);
+app.post('/api/support/send', supportController.sendMessage);
+app.get('/api/support/active/:userId', supportController.getActiveSession);
+
 // Export for Vercel
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

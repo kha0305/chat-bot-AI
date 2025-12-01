@@ -10,12 +10,15 @@ async function setupDatabase() {
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
       port: process.env.DB_PORT,
-      multipleStatements: true // Important for running the full SQL script
+      multipleStatements: true
     });
 
     console.log('✅ Connected.');
+    console.log(`🔨 Creating database '${process.env.DB_NAME}' if not exists...`);
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``);
+    await connection.query(`USE \`${process.env.DB_NAME}\``);
+
     console.log('📂 Reading init_db.sql...');
     
     const sqlPath = path.join(__dirname, 'init_db.sql');

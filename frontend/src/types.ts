@@ -46,7 +46,7 @@ export interface LoanRecord {
   pickupTime?: string;
 }
 
-export type ViewState = 'dashboard' | 'chat' | 'history' | 'admin-dashboard' | 'admin-books' | 'admin-chat';
+export type ViewState = 'dashboard' | 'chat' | 'history' | 'admin-dashboard' | 'admin-books' | 'admin-chat' | 'support-chat';
 
 export type Theme = 'light' | 'dark';
 export type FontSize = 'small' | 'medium' | 'large';
