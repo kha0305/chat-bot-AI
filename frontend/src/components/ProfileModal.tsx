@@ -5,22 +5,22 @@ import { User as UserType } from '../types';
 interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: UserType;
+  user: UserType | null;
   onUpdateUser: (updatedUser: UserType) => void;
 }
 
 const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, onUpdateUser }) => {
-  const [formData, setFormData] = useState<UserType>(user);
-  const [previewAvatar, setPreviewAvatar] = useState<string | undefined>(user.avatar);
+  const [formData, setFormData] = useState<UserType | null>(user);
+  const [previewAvatar, setPreviewAvatar] = useState<string | undefined>(user?.avatar);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
       setFormData(user);
       setPreviewAvatar(user.avatar);
     }
   }, [isOpen, user]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !user || !formData) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -50,7 +50,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose, user, onUp
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-scale-in">
         <div className="relative h-32 bg-gradient-to-r from-brand-500 to-brand-600">
-          <button 
+          <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors"
           >

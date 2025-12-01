@@ -1,0 +1,7 @@
+[dotenv@17.2.3] injecting env (7) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+🤖 AIIntentAnalyzer initialized with model: gemini-1.5-flash
+✅ GEMINI_API_KEY is present.
+Server is running on port 5001
+✅ Successfully connected to Local MySQL Database!
+^C
